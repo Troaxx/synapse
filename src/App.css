@@ -36,3 +36,11 @@
     transform: rotate(360deg);
   }
 }
+
+input[type="checkbox"] {
+  accent-color: #0A0338;
+}
+
+input[type="checkbox"]:checked {
+  accent-color: #0A0338;
+}

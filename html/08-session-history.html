@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Session History - Synapse</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f9fafb;
+            color: #111827;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        h1 {
+            font-size: 1.875rem;
+            font-weight: bold;
+            color: #111827;
+        }
+
+        .total-sessions {
+            color: #6b7280;
+        }
+
+        .total-sessions span {
+            font-weight: 600;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 1.875rem;
+            font-weight: bold;
+        }
+
+        .stat-value.blue { color: #2563eb; }
+        .stat-value.green { color: #16a34a; }
+        .stat-value.purple { color: #9333ea; }
+        .stat-value.orange { color: #ea580c; }
+
+        .session-card {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .session-content {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .session-main {
+            flex: 1;
+        }
+
+        .session-header {
+            display: flex;
+            align-items: start;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .avatar {
+            width: 4rem;
+            height: 4rem;
+            background-color: #d1d5db;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .session-info {
+            flex: 1;
+        }
+
+        .session-title-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 0.5rem;
+        }
+
+        .session-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #111827;
+        }
+
+        .session-tutor {
+            color: #6b7280;
+            margin-bottom: 0.75rem;
+        }
+
+        .session-topic {
+            color: #374151;
+            margin-bottom: 0.75rem;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            background-color: #dcfce7;
+            color: #166534;
+        }
+
+        .session-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: center;
+            color: #6b7280;
+        }
+
+        .detail-icon {
+            margin-right: 0.5rem;
+            width: 1rem;
+            height: 1rem;
+        }
+
+        .notes-box {
+            background-color: #f9fafb;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .notes-title {
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 0.5rem;
+        }
+
+        .notes-text {
+            color: #374151;
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+
+        .review-box {
+            background-color: #eff6ff;
+            border-radius: 0.5rem;
+            padding: 1rem;
+        }
+
+        .review-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .review-title {
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .review-stars {
+            color: #fbbf24;
+        }
+
+        .review-text {
+            color: #374151;
+            font-size: 0.875rem;
+        }
+
+        .session-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            width: 10rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            text-decoration: none;
+            text-align: center;
+            font-size: 0.875rem;
+            width: 100%;
+        }
+
+        .btn-warning {
+            background-color: #fbbf24;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background-color: #f59e0b;
+        }
+
+        .btn-primary {
+            background-color: #2563eb;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+        }
+
+        .btn-success {
+            background-color: #16a34a;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #15803d;
+        }
+
+        .btn-disabled {
+            background-color: #f3f4f6;
+            color: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 1024px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .session-content {
+                flex-direction: column;
+            }
+
+            .session-actions {
+                flex-direction: row;
+                width: 100%;
+            }
+
+            .session-details {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Session History</h1>
+            <div class="total-sessions">
+                <span>5</span> total sessions
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3 class="stat-label">Total Sessions</h3>
+                <p class="stat-value blue">5</p>
+            </div>
+            <div class="stat-card">
+                <h3 class="stat-label">Total Hours</h3>
+                <p class="stat-value green">7</p>
+            </div>
+            <div class="stat-card">
+                <h3 class="stat-label">Reviews Given</h3>
+                <p class="stat-value purple">3</p>
+            </div>
+            <div class="stat-card">
+                <h3 class="stat-label">Pending Reviews</h3>
+                <p class="stat-value orange">2</p>
+            </div>
+        </div>
+
+        <div class="session-card">
+            <div class="session-content">
+                <div class="session-main">
+                    <div class="session-header">
+                        <div class="avatar"></div>
+                        <div class="session-info">
+                            <div class="session-title-row">
+                                <div>
+                                    <div class="session-title">Python</div>
+                                    <div class="session-tutor">with Sarah Chen</div>
+                                </div>
+                                <span class="status-badge">Completed</span>
+                            </div>
+                            <p class="session-topic">Topic: Object-Oriented Programming</p>
+                            <div class="session-details">
+                                <div class="detail-item">
+                                    <svg class="detail-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                    </svg>
+                                    Oct 28, 2025 at 2:00 PM
+                                </div>
+                                <div class="detail-item">
+                                    <svg class="detail-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    60 min
+                                </div>
+                                <div class="detail-item">
+                                    <svg class="detail-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                    </svg>
+                                    Library Level 5
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="notes-box">
+                        <h4 class="notes-title">Session Notes</h4>
+                        <p class="notes-text">Covered inheritance, polymorphism, and encapsulation. Great session!</p>
+                    </div>
+                </div>
+                <div class="session-actions">
+                    <button class="btn btn-warning">Leave Review</button>
+                    <button class="btn btn-primary">View Tutor</button>
+                    <button class="btn btn-success">Book Again</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="session-card">
+            <div class="session-content">
+                <div class="session-main">
+                    <div class="session-header">
+                        <div class="avatar"></div>
+                        <div class="session-info">
+                            <div class="session-title-row">
+                                <div>
+                                    <div class="session-title">UI/UX Design</div>
+                                    <div class="session-tutor">with Emily Wong</div>
+                                </div>
+                                <span class="status-badge">Completed</span>
+                            </div>
+                            <p class="session-topic">Topic: Figma Basics</p>
+                            <div class="session-details">
+                                <div class="detail-item">
+                                    <svg class="detail-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                    </svg>
+                                    Oct 25, 2025 at 3:00 PM
+                                </div>
+                                <div class="detail-item">
+                                    <svg class="detail-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    90 min
+                                </div>
+                                <div class="detail-item">
+                                    <svg class="detail-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                    </svg>
+                                    Online - Zoom
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="notes-box">
+                        <h4 class="notes-title">Session Notes</h4>
+                        <p class="notes-text">Learned about components, auto-layout, and prototyping.</p>
+                    </div>
+
+                    <div class="review-box">
+                        <div class="review-header">
+                            <h4 class="review-title">Your Review</h4>
+                            <div class="review-stars">★★★★★</div>
+                        </div>
+                        <p class="review-text">Excellent tutor! Very patient and knowledgeable.</p>
+                    </div>
+                </div>
+                <div class="session-actions">
+                    <button class="btn btn-disabled" disabled>Reviewed</button>
+                    <button class="btn btn-primary">View Tutor</button>
+                    <button class="btn btn-success">Book Again</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="session-card">
+            <div class="session-content">
+                <div class="session-main">
+                    <div class="session-header">
+                        <div class="avatar"></div>
+                        <div class="session-info">
+                            <div class="session-title-row">
+                                <div>
+                                    <div class="session-title">Web Development</div>
+                                    <div class="session-tutor">with Marcus Tan</div>
+                                </div>
+                                <span class="status-badge">Completed</span>
+                            </div>
+                            <p class="session-topic">Topic: JavaScript ES6 Features</p>
+                            <div class="session-details">
+                                <div class="detail-item">
+                                    <svg class="detail-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                    </svg>
+                                    Oct 20, 2025 at 4:00 PM
+                                </div>
+                                <div class="detail-item">
+                                    <svg class="detail-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    60 min
+                                </div>
+                                <div class="detail-item">
+                                    <svg class="detail-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                    </svg>
+                                    Study Room 3A
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="notes-box">
+                        <h4 class="notes-title">Session Notes</h4>
+                        <p class="notes-text">Covered arrow functions, destructuring, spread operator, and promises.</p>
+                    </div>
+
+                    <div class="review-box">
+                        <div class="review-header">
+                            <h4 class="review-title">Your Review</h4>
+                            <div class="review-stars">★★★★★</div>
+                        </div>
+                        <p class="review-text">Marcus explained arrow functions and destructuring really well!</p>
+                    </div>
+                </div>
+                <div class="session-actions">
+                    <button class="btn btn-disabled" disabled>Reviewed</button>
+                    <button class="btn btn-primary">View Tutor</button>
+                    <button class="btn btn-success">Book Again</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messages - Synapse</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f9fafb;
+            color: #111827;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        h1 {
+            font-size: 1.875rem;
+            font-weight: bold;
+            color: #111827;
+            margin-bottom: 1.5rem;
+        }
+
+        .messages-container {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            height: calc(100vh - 200px);
+            display: flex;
+            overflow: hidden;
+        }
+
+        .conversations-list {
+            width: 33.333%;
+            border-right: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .search-box {
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.5rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .conversations {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .conversation-item {
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .conversation-item:hover {
+            background-color: #f9fafb;
+        }
+
+        .conversation-item.active {
+            background-color: #eff6ff;
+        }
+
+        .conversation-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .avatar {
+            width: 3rem;
+            height: 3rem;
+            background-color: #d1d5db;
+            border-radius: 50%;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .unread-badge {
+            position: absolute;
+            top: -0.25rem;
+            right: -0.25rem;
+            width: 1.25rem;
+            height: 1.25rem;
+            background-color: #ef4444;
+            color: white;
+            border-radius: 50%;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .conversation-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .conversation-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.25rem;
+        }
+
+        .tutor-name {
+            font-weight: 600;
+            color: #111827;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .timestamp {
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+
+        .last-message {
+            font-size: 0.875rem;
+            color: #6b7280;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            background: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-tutor-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .chat-tutor-name {
+            font-weight: bold;
+            color: #111827;
+        }
+
+        .online-status {
+            font-size: 0.875rem;
+            color: #16a34a;
+        }
+
+        .chat-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            font-size: 0.875rem;
+        }
+
+        .btn-primary {
+            background-color: #2563eb;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+        }
+
+        .btn-secondary {
+            background-color: #e5e7eb;
+            color: #374151;
+        }
+
+        .btn-secondary:hover {
+            background-color: #d1d5db;
+        }
+
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+            background-color: #f9fafb;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .message {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .message.sent {
+            flex-direction: row-reverse;
+        }
+
+        .message-bubble {
+            max-width: 60%;
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+        }
+
+        .message.received .message-bubble {
+            background-color: white;
+            border: 1px solid #e5e7eb;
+            color: #111827;
+        }
+
+        .message.sent .message-bubble {
+            background-color: #2563eb;
+            color: white;
+        }
+
+        .message-text {
+            margin-bottom: 0.25rem;
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            opacity: 0.7;
+        }
+
+        .message-input-area {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #e5e7eb;
+            background: white;
+        }
+
+        .input-form {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 0.5rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .message-input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .send-btn {
+            padding: 0.5rem 1.5rem;
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .send-btn:hover {
+            background-color: #1d4ed8;
+        }
+
+        @media (max-width: 768px) {
+            .conversations-list {
+                width: 100%;
+            }
+
+            .chat-area {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Messages</h1>
+
+        <div class="messages-container">
+            <div class="conversations-list">
+                <div class="search-box">
+                    <input type="text" class="search-input" placeholder="Search conversations...">
+                </div>
+                <div class="conversations">
+                    <div class="conversation-item active">
+                        <div class="conversation-header">
+                            <div class="avatar">
+                                <span class="unread-badge">2</span>
+                            </div>
+                            <div class="conversation-info">
+                                <div class="conversation-top">
+                                    <div class="tutor-name">Sarah Chen</div>
+                                    <div class="timestamp">2 hours ago</div>
+                                </div>
+                                <div class="last-message">See you tomorrow at 2 PM!</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="conversation-item">
+                        <div class="conversation-header">
+                            <div class="avatar"></div>
+                            <div class="conversation-info">
+                                <div class="conversation-top">
+                                    <div class="tutor-name">Marcus Tan</div>
+                                    <div class="timestamp">5 hours ago</div>
+                                </div>
+                                <div class="last-message">Sure, I can help you with React hooks</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="conversation-item">
+                        <div class="conversation-header">
+                            <div class="avatar">
+                                <span class="unread-badge">1</span>
+                            </div>
+                            <div class="conversation-info">
+                                <div class="conversation-top">
+                                    <div class="tutor-name">Priya Kumar</div>
+                                    <div class="timestamp">1 day ago</div>
+                                </div>
+                                <div class="last-message">Let me know if you need any clarification</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="conversation-item">
+                        <div class="conversation-header">
+                            <div class="avatar"></div>
+                            <div class="conversation-info">
+                                <div class="conversation-top">
+                                    <div class="tutor-name">David Lim</div>
+                                    <div class="timestamp">2 days ago</div>
+                                </div>
+                                <div class="last-message">Great session today!</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-area">
+                <div class="chat-header">
+                    <div class="chat-tutor-info">
+                        <div class="avatar"></div>
+                        <div>
+                            <div class="chat-tutor-name">Sarah Chen</div>
+                            <div class="online-status">Online</div>
+                        </div>
+                    </div>
+                    <div class="chat-actions">
+                        <button class="btn btn-primary">Book Session</button>
+                        <button class="btn btn-secondary">View Profile</button>
+                    </div>
+                </div>
+
+                <div class="messages-area">
+                    <div class="message received">
+                        <div class="message-bubble">
+                            <div class="message-text">Hi! Thanks for booking a session with me.</div>
+                            <div class="message-time">10:30 AM</div>
+                        </div>
+                    </div>
+
+                    <div class="message sent">
+                        <div class="message-bubble">
+                            <div class="message-text">Hi Sarah! Looking forward to learning Python with you.</div>
+                            <div class="message-time">10:32 AM</div>
+                        </div>
+                    </div>
+
+                    <div class="message received">
+                        <div class="message-bubble">
+                            <div class="message-text">Great! What specific topics would you like to cover?</div>
+                            <div class="message-time">10:35 AM</div>
+                        </div>
+                    </div>
+
+                    <div class="message sent">
+                        <div class="message-bubble">
+                            <div class="message-text">I'm struggling with object-oriented programming concepts, especially inheritance and polymorphism.</div>
+                            <div class="message-time">10:37 AM</div>
+                        </div>
+                    </div>
+
+                    <div class="message received">
+                        <div class="message-bubble">
+                            <div class="message-text">Perfect! I'll prepare some examples for our session tomorrow. We'll go through it step by step.</div>
+                            <div class="message-time">10:40 AM</div>
+                        </div>
+                    </div>
+
+                    <div class="message sent">
+                        <div class="message-bubble">
+                            <div class="message-text">That sounds great! Thank you so much.</div>
+                            <div class="message-time">10:42 AM</div>
+                        </div>
+                    </div>
+
+                    <div class="message received">
+                        <div class="message-bubble">
+                            <div class="message-text">See you tomorrow at 2 PM!</div>
+                            <div class="message-time">10:45 AM</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="message-input-area">
+                    <form class="input-form">
+                        <input type="text" class="message-input" placeholder="Type your message...">
+                        <button type="submit" class="send-btn">Send</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

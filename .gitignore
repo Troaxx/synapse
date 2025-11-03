@@ -27,3 +27,4 @@ yarn-error.log*
 .misc/
 .env
 .markdown/
+.html/

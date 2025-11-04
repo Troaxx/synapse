@@ -5,9 +5,10 @@
 /.pnp
 .pnp.js
 
-.server/node_modules
+# server dependencies
+server/node_modules
 
-.USER_CREDENTIALS.md 
+USER_CREDENTIALS.md 
 
 
 # testing

@@ -18,6 +18,12 @@ const moduleSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  year: {
+    type: Number
+  },
+  semester: {
+    type: Number
+  },
   description: {
     type: String
   },

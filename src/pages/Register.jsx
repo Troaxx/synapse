@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { MODULES } from '../constants/modules';
+
+const GRADES = ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'F'];
 
 const Register = () => {
   const navigate = useNavigate();
@@ -12,7 +15,12 @@ const Register = () => {
     confirmPassword: '',
     phone: '',
     year: 'Year 1',
-    course: ''
+    course: '',
+    tutorSubjects: [
+      { moduleCode: '', name: '', grade: '' },
+      { moduleCode: '', name: '', grade: '' },
+      { moduleCode: '', name: '', grade: '' }
+    ]
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -24,12 +32,46 @@ const Register = () => {
     });
   };
 
+  const handleSubjectChange = (index, field, value) => {
+    const updatedSubjects = [...formData.tutorSubjects];
+    
+    if (field === 'moduleCode') {
+      const selectedModule = MODULES.find(m => m.moduleCode === value);
+      if (selectedModule) {
+        updatedSubjects[index] = {
+          moduleCode: selectedModule.moduleCode,
+          name: selectedModule.name,
+          grade: updatedSubjects[index].grade
+        };
+      }
+    } else {
+      updatedSubjects[index][field] = value;
+    }
+    
+    setFormData({
+      ...formData,
+      tutorSubjects: updatedSubjects
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
+      return;
+    }
+
+    const emptySubjects = formData.tutorSubjects.filter(s => !s.moduleCode || !s.name || !s.grade);
+    if (emptySubjects.length > 0) {
+      setError('Please select all 3 subjects and their grades');
+      return;
+    }
+
+    const uniqueModules = new Set(formData.tutorSubjects.map(s => s.moduleCode));
+    if (uniqueModules.size !== 3) {
+      setError('Please select 3 different subjects');
       return;
     }
 
@@ -49,7 +91,7 @@ const Register = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+      <div className="max-w-2xl w-full space-y-8">
         <div>
           <img src="/synapse_logo.png" alt="Synapse Logo" className="mx-auto h-20 w-auto" />
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
@@ -149,6 +191,60 @@ const Register = () => {
                   onChange={handleChange}
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                Subjects You Can Tutor (Select 3)
+              </label>
+              {formData.tutorSubjects.map((subject, index) => {
+                const availableModules = MODULES.filter(m => {
+                  const usedModules = formData.tutorSubjects
+                    .filter((_, i) => i !== index)
+                    .map(s => s.moduleCode);
+                  return !usedModules.includes(m.moduleCode) || m.moduleCode === subject.moduleCode;
+                });
+
+                return (
+                  <div key={index} className="mb-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Subject {index + 1}
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">Module</label>
+                        <select
+                          value={subject.moduleCode}
+                          onChange={(e) => handleSubjectChange(index, 'moduleCode', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 bg-white rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
+                          required
+                        >
+                          <option value="">Select module</option>
+                          {availableModules.map(module => (
+                            <option key={module.moduleCode} value={module.moduleCode}>
+                              {module.moduleCode} - {module.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">Grade</label>
+                        <select
+                          value={subject.grade}
+                          onChange={(e) => handleSubjectChange(index, 'grade', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 bg-white rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
+                          required
+                        >
+                          <option value="">Select grade</option>
+                          {GRADES.map(grade => (
+                            <option key={grade} value={grade}>{grade}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
             <div>

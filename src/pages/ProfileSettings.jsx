@@ -1,26 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 const ProfileSettings = () => {
+  const { user, updateProfile, loadUserProfile } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState({ type: '', text: '' });
+  
   const [profileData, setProfileData] = useState({
-    name: 'Alex Tan',
-    email: 'alex.tan@student.tp.edu.sg',
-    phone: '+65 9123 4567',
-    year: 'Year 2',
-    course: 'Diploma in IT',
-    bio: 'IT student passionate about web development and programming.'
+    name: '',
+    email: '',
+    phone: '',
+    year: 'Year 1',
+    course: '',
+    bio: ''
   });
 
-  const [subjectsNeed, setSubjectsNeed] = useState([
-    'Full Stack Web Development',
-    'Data Structures',
-    'Database Systems'
-  ]);
+  const [subjectsNeed, setSubjectsNeed] = useState([]);
+  const [newSubjectNeed, setNewSubjectNeed] = useState('');
 
-  const [subjectsOffer, setSubjectsOffer] = useState([
-    'HTML/CSS',
-    'JavaScript Basics'
-  ]);
+  const [subjectsOffer, setSubjectsOffer] = useState([]);
+  const [newSubjectOffer, setNewSubjectOffer] = useState('');
 
   const [notifications, setNotifications] = useState({
     emailBookings: true,
@@ -31,6 +31,29 @@ const ProfileSettings = () => {
     pushReminders: true
   });
 
+  useEffect(() => {
+    if (user) {
+      setProfileData({
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        year: user.year || 'Year 1',
+        course: user.course || '',
+        bio: user.bio || ''
+      });
+      setSubjectsNeed(user.subjectsNeedHelp || []);
+      setSubjectsOffer(user.subjectsCanTeach || []);
+      setNotifications(user.notifications || {
+        emailBookings: true,
+        emailMessages: true,
+        emailReminders: true,
+        pushBookings: true,
+        pushMessages: false,
+        pushReminders: true
+      });
+    }
+  }, [user]);
+
   const handleProfileChange = (e) => {
     setProfileData({
       ...profileData,
@@ -39,14 +62,71 @@ const ProfileSettings = () => {
   };
 
   const handleNotificationChange = (key) => {
-    setNotifications({
+    const updated = {
       ...notifications,
       [key]: !notifications[key]
-    });
+    };
+    setNotifications(updated);
+    handleSaveNotifications(updated);
   };
 
-  const handleSaveProfile = (e) => {
+  const handleSaveProfile = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setMessage({ type: '', text: '' });
+
+    try {
+      const result = await updateProfile(profileData);
+      if (result.success) {
+        setMessage({ type: 'success', text: 'Profile updated successfully!' });
+        await loadUserProfile();
+      } else {
+        setMessage({ type: 'error', text: result.message || 'Failed to update profile' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'An error occurred while updating profile' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveNotifications = async (updatedNotifications) => {
+    try {
+      await updateProfile({ notifications: updatedNotifications });
+      await loadUserProfile();
+    } catch (error) {
+      console.error('Error updating notifications:', error);
+    }
+  };
+
+  const handleAddSubjectNeed = () => {
+    if (newSubjectNeed.trim() && !subjectsNeed.includes(newSubjectNeed.trim())) {
+      const updated = [...subjectsNeed, newSubjectNeed.trim()];
+      setSubjectsNeed(updated);
+      setNewSubjectNeed('');
+      updateProfile({ subjectsNeedHelp: updated }).then(() => loadUserProfile());
+    }
+  };
+
+  const handleRemoveSubjectNeed = (subject) => {
+    const updated = subjectsNeed.filter(s => s !== subject);
+    setSubjectsNeed(updated);
+    updateProfile({ subjectsNeedHelp: updated }).then(() => loadUserProfile());
+  };
+
+  const handleAddSubjectOffer = () => {
+    if (newSubjectOffer.trim() && !subjectsOffer.includes(newSubjectOffer.trim())) {
+      const updated = [...subjectsOffer, newSubjectOffer.trim()];
+      setSubjectsOffer(updated);
+      setNewSubjectOffer('');
+      updateProfile({ subjectsCanTeach: updated }).then(() => loadUserProfile());
+    }
+  };
+
+  const handleRemoveSubjectOffer = (subject) => {
+    const updated = subjectsOffer.filter(s => s !== subject);
+    setSubjectsOffer(updated);
+    updateProfile({ subjectsCanTeach: updated }).then(() => loadUserProfile());
   };
 
   return (
@@ -89,6 +169,16 @@ const ProfileSettings = () => {
                   Notifications
                 </button>
                 <button
+                  onClick={() => setActiveTab('tutor')}
+                  className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors ${
+                    activeTab === 'tutor'
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  Tutor Mode
+                </button>
+                <button
                   onClick={() => setActiveTab('account')}
                   className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors ${
                     activeTab === 'account'
@@ -103,6 +193,14 @@ const ProfileSettings = () => {
           </div>
 
           <div className="lg:col-span-3">
+            {message.text && (
+              <div className={`mb-4 p-4 rounded-lg ${
+                message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
+              }`}>
+                {message.text}
+              </div>
+            )}
+            
             {activeTab === 'profile' && (
               <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">Personal Profile</h2>
@@ -143,9 +241,10 @@ const ProfileSettings = () => {
                         type="email"
                         name="email"
                         value={profileData.email}
-                        onChange={handleProfileChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        disabled
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
                       />
+                      <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
                     </div>
                   </div>
 
@@ -207,9 +306,10 @@ const ProfileSettings = () => {
 
                   <button
                     type="submit"
-                    className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                    disabled={loading}
+                    className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Save Changes
+                    {loading ? 'Saving...' : 'Save Changes'}
                   </button>
                 </form>
               </div>
@@ -226,7 +326,11 @@ const ProfileSettings = () => {
                     {subjectsNeed.map((subject, index) => (
                       <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
                         <span className="text-gray-900">{subject}</span>
-                        <button className="text-red-600 hover:text-red-700">
+                        <button 
+                          type="button"
+                          onClick={() => handleRemoveSubjectNeed(subject)}
+                          className="text-red-600 hover:text-red-700"
+                        >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                           </svg>
@@ -234,9 +338,23 @@ const ProfileSettings = () => {
                       </div>
                     ))}
                   </div>
-                  <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium">
-                    Add Subject
-                  </button>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newSubjectNeed}
+                      onChange={(e) => setNewSubjectNeed(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddSubjectNeed())}
+                      placeholder="Enter subject name"
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <button 
+                      type="button"
+                      onClick={handleAddSubjectNeed}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                    >
+                      Add Subject
+                    </button>
+                  </div>
                 </div>
 
                 <div className="bg-white rounded-lg shadow p-6">
@@ -248,7 +366,11 @@ const ProfileSettings = () => {
                     {subjectsOffer.map((subject, index) => (
                       <div key={index} className="flex items-center justify-between bg-green-50 p-3 rounded-lg">
                         <span className="text-gray-900">{subject}</span>
-                        <button className="text-red-600 hover:text-red-700">
+                        <button 
+                          type="button"
+                          onClick={() => handleRemoveSubjectOffer(subject)}
+                          className="text-red-600 hover:text-red-700"
+                        >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                           </svg>
@@ -256,9 +378,23 @@ const ProfileSettings = () => {
                       </div>
                     ))}
                   </div>
-                  <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium">
-                    Add Subject
-                  </button>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newSubjectOffer}
+                      onChange={(e) => setNewSubjectOffer(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddSubjectOffer())}
+                      placeholder="Enter subject name"
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    />
+                    <button 
+                      type="button"
+                      onClick={handleAddSubjectOffer}
+                      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium"
+                    >
+                      Add Subject
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -280,21 +416,6 @@ const ProfileSettings = () => {
                           type="checkbox"
                           checked={notifications.emailBookings}
                           onChange={() => handleNotificationChange('emailBookings')}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                      </label>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-900">New Messages</p>
-                        <p className="text-sm text-gray-600">Get notified when you receive new messages</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={notifications.emailMessages}
-                          onChange={() => handleNotificationChange('emailMessages')}
                           className="sr-only peer"
                         />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
@@ -338,21 +459,6 @@ const ProfileSettings = () => {
                     </div>
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium text-gray-900">New Messages</p>
-                        <p className="text-sm text-gray-600">Get push notifications for new messages</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={notifications.pushMessages}
-                          onChange={() => handleNotificationChange('pushMessages')}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                      </label>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
                         <p className="font-medium text-gray-900">Session Reminders</p>
                         <p className="text-sm text-gray-600">Get push reminders about upcoming sessions</p>
                       </div>
@@ -367,6 +473,47 @@ const ProfileSettings = () => {
                       </label>
                     </div>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'tutor' && (
+              <div className="bg-white rounded-lg shadow p-6">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Tutor Mode</h2>
+                <div className="mb-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <p className="font-medium text-gray-900">Enable Tutor Mode</p>
+                      <p className="text-sm text-gray-600">Allow other students to find and book sessions with you as a tutor</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={user?.isTutor || false}
+                        onChange={async (e) => {
+                          const isTutor = e.target.checked;
+                          await updateProfile({ isTutor });
+                          await loadUserProfile();
+                        }}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+                  {user?.isTutor && (
+                    <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                      <p className="text-sm text-green-800">
+                        Tutor mode is enabled. You can now accept session requests from students and switch to tutor view in your dashboard.
+                      </p>
+                    </div>
+                  )}
+                  {!user?.isTutor && (
+                    <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm text-blue-800">
+                        Enable tutor mode to start helping other students. You can add subjects you can teach in the Subjects tab.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

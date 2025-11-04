@@ -1,18 +1,51 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { sessionAPI } from '../services/api';
 
 const Schedule = () => {
   const navigate = useNavigate();
-  const [currentDate, setCurrentDate] = useState(new Date(2025, 10, 1));
+  const { user } = useAuth();
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState('monthly');
+  const [sessions, setSessions] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const sessions = [
-    { id: 1, date: new Date(2025, 10, 4), time: "2:00 PM", subject: "Python", tutor: "Sarah Chen", status: "confirmed" },
-    { id: 2, date: new Date(2025, 10, 5), time: "3:30 PM", subject: "Web Dev", tutor: "Marcus Tan", status: "confirmed" },
-    { id: 3, date: new Date(2025, 10, 6), time: "4:00 PM", subject: "Database", tutor: "David Lim", status: "pending" },
-    { id: 4, date: new Date(2025, 10, 7), time: "10:00 AM", subject: "Math", tutor: "Priya Kumar", status: "confirmed" },
-    { id: 5, date: new Date(2025, 10, 28), time: "2:00 PM", subject: "Python", tutor: "Sarah Chen", status: "completed" }
-  ];
+  useEffect(() => {
+    loadSessions();
+  }, []);
+
+  const loadSessions = async () => {
+    try {
+      setLoading(true);
+      const response = await sessionAPI.getUserSessions();
+      const isTutor = user?.isTutor;
+      const userId = user?._id || user?.id;
+      
+      const filteredSessions = response.data
+        .filter(s => {
+          if (isTutor) {
+            return (s.tutor?._id === userId || s.tutor === userId);
+          } else {
+            return (s.student?._id === userId || s.student === userId);
+          }
+        })
+        .map(session => ({
+          id: session._id,
+          date: new Date(session.date),
+          time: session.time,
+          subject: session.subject,
+          tutor: isTutor ? session.student?.name : session.tutor?.name,
+          status: session.status.toLowerCase()
+        }));
+      
+      setSessions(filteredSessions);
+    } catch (error) {
+      console.error('Error loading sessions:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getStatusColor = (status) => {
     switch (status) {

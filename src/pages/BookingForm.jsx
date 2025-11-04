@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { tutorAPI, moduleAPI, sessionAPI } from '../services/api';
 
 const BookingForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const [tutor, setTutor] = useState(null);
+  const [subjects, setSubjects] = useState([]);
+  const [loading, setLoading] = useState(true);
   
   const [formData, setFormData] = useState({
     subject: '',
@@ -12,21 +16,41 @@ const BookingForm = () => {
     time: '',
     duration: '60',
     location: '',
-    notes: ''
+    notes: '',
+    moduleCode: ''
   });
 
-  const tutor = {
-    name: "Sarah Chen",
-    subject: "Python",
-    image: "/assets/tutor1.png"
-  };
+  useEffect(() => {
+    loadTutorAndModules();
+  }, [id]);
 
-  const subjects = [
-    "CIT2C20 - Full Stack Web Dev",
-    "CIT2C10 - Data Structures",
-    "CIT2C30 - Database Systems",
-    "CIT2C40 - Object-Oriented Programming"
-  ];
+  const loadTutorAndModules = async () => {
+    try {
+      setLoading(true);
+      const [tutorResponse, modulesResponse] = await Promise.all([
+        tutorAPI.getTutorById(id),
+        moduleAPI.getAllModules()
+      ]);
+
+      setTutor(tutorResponse.data.tutor);
+      
+      const tutorSubjects = tutorResponse.data.tutor?.tutorProfile?.subjects?.map(s => s.name) || [];
+      const modulesList = modulesResponse.data.map(m => ({
+        value: m.moduleCode,
+        label: `${m.moduleCode} - ${m.name}`
+      }));
+      
+      setSubjects(modulesList);
+      
+      if (tutorSubjects.length > 0) {
+        setFormData(prev => ({ ...prev, subject: tutorSubjects[0] }));
+      }
+    } catch (error) {
+      console.error('Error loading tutor data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const timeSlots = [
     "9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM",
@@ -43,9 +67,28 @@ const BookingForm = () => {
     "Cafeteria Study Area"
   ];
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    navigate('/bookings');
+    if (!tutor) return;
+    
+    try {
+      const moduleCode = formData.moduleCode || formData.subject.split(' - ')[0];
+      await sessionAPI.createSession({
+        tutorId: tutor._id || tutor.id,
+        subject: formData.subject,
+        moduleCode: moduleCode,
+        topic: formData.topic,
+        date: formData.date,
+        time: formData.time,
+        duration: parseInt(formData.duration),
+        location: formData.location,
+        notes: formData.notes
+      });
+      navigate('/bookings');
+    } catch (error) {
+      console.error('Error creating session:', error);
+      alert('Failed to create session booking');
+    }
   };
 
   const handleChange = (e) => {
@@ -88,17 +131,28 @@ const BookingForm = () => {
 
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Book a Session</h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow p-6 mb-6">
-              <div className="flex items-center gap-4 pb-6 border-b border-gray-200">
-                <div className="w-16 h-16 bg-gray-300 rounded-full"></div>
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900">{tutor.name}</h2>
-                  <p className="text-gray-600">{tutor.subject}</p>
+        {loading ? (
+          <div className="text-center py-12 text-gray-500">Loading tutor information...</div>
+        ) : tutor ? (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <div className="bg-white rounded-lg shadow p-6 mb-6">
+                <div className="flex items-center gap-4 pb-6 border-b border-gray-200">
+                  <div className="w-16 h-16 bg-gray-300 rounded-full overflow-hidden">
+                    {tutor.profilePhoto ? (
+                      <img src={tutor.profilePhoto} alt={tutor.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-white font-semibold bg-gray-400">
+                        {tutor.name?.charAt(0)}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900">{tutor.name}</h2>
+                    <p className="text-gray-600">{tutor.tutorProfile?.subjects?.[0]?.name || 'Tutor'}</p>
+                  </div>
                 </div>
               </div>
-            </div>
 
             <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-6">Session Details</h2>
@@ -117,7 +171,7 @@ const BookingForm = () => {
                   >
                     <option value="">Select a subject</option>
                     {subjects.map((subject, index) => (
-                      <option key={index} value={subject}>{subject}</option>
+                      <option key={index} value={subject.label}>{subject.label}</option>
                     ))}
                   </select>
                 </div>
@@ -293,7 +347,10 @@ const BookingForm = () => {
               )}
             </div>
           </div>
-        </div>
+          </div>
+        ) : (
+          <div className="text-center py-12 text-gray-500">Tutor not found</div>
+        )}
       </div>
     </div>
   );

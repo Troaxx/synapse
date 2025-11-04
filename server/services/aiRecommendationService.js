@@ -11,8 +11,14 @@ class AIRecommendationService {
 
   initializeAI() {
     if (process.env.GEMINI_API_KEY) {
-      this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-      this.model = this.genAI.getGenerativeModel({ model: 'gemini-pro' });
+      try {
+        this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        // Try gemini-1.5-flash first (faster and cheaper), fallback to gemini-1.5-pro if needed
+        this.model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      } catch (error) {
+        console.warn('Error initializing Gemini AI:', error.message);
+        this.model = null;
+      }
     } else {
       console.warn('Gemini API key not found. AI recommendations will be disabled.');
     }

@@ -37,11 +37,6 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
-  role: {
-    type: String,
-    enum: ['student', 'tutor', 'admin'],
-    default: 'student'
-  },
   isTutor: {
     type: Boolean,
     default: false
@@ -72,8 +67,18 @@ const userSchema = new mongoose.Schema({
       default: '< 24 hours'
     },
     subjects: [{
-      name: String,
-      grade: String,
+      moduleCode: {
+        type: String,
+        required: true
+      },
+      name: {
+        type: String,
+        required: true
+      },
+      grade: {
+        type: String,
+        required: true
+      },
       sessions: {
         type: Number,
         default: 0

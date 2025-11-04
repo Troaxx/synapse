@@ -1,91 +1,62 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { sessionAPI } from '../services/api';
 
 const SessionHistory = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [selectedSession, setSelectedSession] = useState(null);
   const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
+  const [sessions, setSessions] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const sessions = [
-    {
-      id: 1,
-      tutor: "Sarah Chen",
-      tutorImage: "/assets/tutor1.png",
-      subject: "Python",
-      topic: "Object-Oriented Programming",
-      date: "Oct 28, 2025",
-      time: "2:00 PM",
-      duration: "60 min",
-      location: "Library Level 5",
-      status: "Completed",
-      reviewed: false,
-      notes: "Covered inheritance, polymorphism, and encapsulation. Great session!"
-    },
-    {
-      id: 2,
-      tutor: "Emily Wong",
-      tutorImage: "/assets/tutor5.png",
-      subject: "UI/UX Design",
-      topic: "Figma Basics",
-      date: "Oct 25, 2025",
-      time: "3:00 PM",
-      duration: "90 min",
-      location: "Online - Zoom",
-      status: "Completed",
-      reviewed: true,
-      rating: 5,
-      review: "Excellent tutor! Very patient and knowledgeable.",
-      notes: "Learned about components, auto-layout, and prototyping."
-    },
-    {
-      id: 3,
-      tutor: "Marcus Tan",
-      tutorImage: "/assets/tutor2.png",
-      subject: "Web Development",
-      topic: "JavaScript ES6 Features",
-      date: "Oct 20, 2025",
-      time: "4:00 PM",
-      duration: "60 min",
-      location: "Study Room 3A",
-      status: "Completed",
-      reviewed: true,
-      rating: 5,
-      review: "Marcus explained arrow functions and destructuring really well!",
-      notes: "Covered arrow functions, destructuring, spread operator, and promises."
-    },
-    {
-      id: 4,
-      tutor: "David Lim",
-      tutorImage: "/assets/tutor4.png",
-      subject: "Database",
-      topic: "SQL Joins",
-      date: "Oct 15, 2025",
-      time: "2:30 PM",
-      duration: "60 min",
-      location: "Library Level 3",
-      status: "Completed",
-      reviewed: false,
-      notes: "Practiced INNER JOIN, LEFT JOIN, RIGHT JOIN with examples."
-    },
-    {
-      id: 5,
-      tutor: "Priya Kumar",
-      tutorImage: "/assets/tutor3.png",
-      subject: "Mathematics",
-      topic: "Calculus - Derivatives",
-      date: "Oct 10, 2025",
-      time: "10:00 AM",
-      duration: "90 min",
-      location: "Online - Zoom",
-      status: "Completed",
-      reviewed: true,
-      rating: 5,
-      review: "Priya is amazing! Made calculus so much easier to understand.",
-      notes: "Learned derivative rules, chain rule, and product rule."
+  useEffect(() => {
+    loadSessions();
+  }, []);
+
+  const loadSessions = async () => {
+    try {
+      setLoading(true);
+      const response = await sessionAPI.getUserSessions({ type: 'past' });
+      const isTutor = user?.isTutor;
+      const userId = user?._id || user?.id;
+      
+      const filteredSessions = response.data
+        .filter(s => {
+          if (isTutor) {
+            return (s.tutor?._id === userId || s.tutor === userId);
+          } else {
+            return (s.student?._id === userId || s.student === userId);
+          }
+        })
+        .map(session => ({
+          id: session._id,
+          tutor: isTutor ? session.student?.name : session.tutor?.name,
+          tutorId: isTutor ? (session.student?._id || session.student) : (session.tutor?._id || session.tutor),
+          tutorImage: isTutor ? session.student?.profilePhoto : session.tutor?.profilePhoto,
+          subject: session.subject,
+          topic: session.topic,
+          date: new Date(session.date).toLocaleDateString(),
+          time: session.time,
+          duration: `${session.duration} min`,
+          location: session.location,
+          status: session.status,
+          reviewed: !!session.review,
+          rating: session.review?.rating,
+          review: session.review?.comment,
+          notes: session.sessionNotes
+        }));
+      
+      setSessions(filteredSessions);
+    } catch (error) {
+      console.error('Error loading sessions:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   const handleLeaveReview = (session) => {
     setSelectedSession(session);
@@ -94,10 +65,19 @@ const SessionHistory = () => {
     setReviewText('');
   };
 
-  const handleSubmitReview = (e) => {
+  const handleSubmitReview = async (e) => {
     e.preventDefault();
-    setShowReviewModal(false);
-    setSelectedSession(null);
+    if (!selectedSession || !rating || !reviewText) return;
+    
+    try {
+      await sessionAPI.addReview(selectedSession.id, { rating, comment: reviewText });
+      setShowReviewModal(false);
+      setSelectedSession(null);
+      await loadSessions();
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      alert('Failed to submit review');
+    }
   };
 
   return (
@@ -106,37 +86,44 @@ const SessionHistory = () => {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-gray-900">Session History</h1>
           <div className="text-gray-600">
-            <span className="font-semibold">{sessions.length}</span> total sessions
+            <span className="font-semibold">{loading ? '...' : sessions.length}</span> total sessions
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-sm text-gray-600 mb-2">Total Sessions</h3>
-            <p className="text-3xl font-bold text-blue-600">{sessions.length}</p>
+            <p className="text-3xl font-bold text-blue-600">{loading ? '...' : sessions.length}</p>
           </div>
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-sm text-gray-600 mb-2">Total Hours</h3>
             <p className="text-3xl font-bold text-green-600">
-              {sessions.reduce((acc, s) => acc + parseInt(s.duration), 0) / 60}
+              {loading ? '...' : Math.round(sessions.reduce((acc, s) => acc + parseInt(s.duration || 0), 0) / 60 * 10) / 10}
             </p>
           </div>
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-sm text-gray-600 mb-2">Reviews Given</h3>
             <p className="text-3xl font-bold text-purple-600">
-              {sessions.filter(s => s.reviewed).length}
+              {loading ? '...' : sessions.filter(s => s.reviewed).length}
             </p>
           </div>
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-sm text-gray-600 mb-2">Pending Reviews</h3>
             <p className="text-3xl font-bold text-orange-600">
-              {sessions.filter(s => !s.reviewed).length}
+              {loading ? '...' : sessions.filter(s => !s.reviewed).length}
             </p>
           </div>
         </div>
 
-        <div className="space-y-4">
-          {sessions.map(session => (
+        {loading ? (
+          <div className="text-center py-12 text-gray-500">Loading session history...</div>
+        ) : sessions.length === 0 ? (
+          <div className="bg-white rounded-lg shadow p-12 text-center">
+            <p className="text-gray-500">No completed sessions yet</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {sessions.map(session => (
             <div key={session.id} className="bg-white rounded-lg shadow p-6">
               <div className="flex flex-col lg:flex-row gap-6">
                 <div className="flex-1">
@@ -213,23 +200,20 @@ const SessionHistory = () => {
                       Reviewed
                     </button>
                   )}
-                  <button
-                    onClick={() => navigate(`/tutor/${session.id}`)}
-                    className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
-                  >
-                    View Tutor
-                  </button>
-                  <button
-                    onClick={() => navigate(`/booking/${session.id}`)}
-                    className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium text-sm"
-                  >
-                    Book Again
-                  </button>
+                  {!user?.isTutor && session.tutorId && (
+                    <button
+                      onClick={() => navigate(`/tutor/${session.tutorId}`)}
+                      className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
+                    >
+                      View Tutor
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
           ))}
-        </div>
+          </div>
+        )}
       </div>
 
       {showReviewModal && selectedSession && (
@@ -237,7 +221,7 @@ const SessionHistory = () => {
           <div className="bg-white rounded-lg max-w-md w-full p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Leave a Review</h2>
             <p className="text-gray-600 mb-4">
-              How was your session with {selectedSession.tutor}?
+              How was your session with {selectedSession?.tutor}?
             </p>
             <form onSubmit={handleSubmitReview}>
               <div className="mb-4">

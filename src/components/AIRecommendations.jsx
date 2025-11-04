@@ -2,12 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { recommendationAPI } from '../services/api';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
-import TipsAndUpdatesIcon from '@mui/icons-material/TipsAndUpdates';
 
 const AIRecommendations = () => {
   const navigate = useNavigate();
   const [recommendations, setRecommendations] = useState(null);
-  const [insights, setInsights] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -18,13 +16,9 @@ const AIRecommendations = () => {
   const loadRecommendations = async () => {
     try {
       setLoading(true);
-      const [recsResponse, insightsResponse] = await Promise.all([
-        recommendationAPI.getPersonalizedTutors(),
-        recommendationAPI.getInsights()
-      ]);
+      const recsResponse = await recommendationAPI.getPersonalizedTutors();
 
       setRecommendations(recsResponse.data.data);
-      setInsights(insightsResponse.data.data);
       setError(null);
     } catch (err) {
       console.error('Error loading recommendations:', err);
@@ -71,33 +65,6 @@ const AIRecommendations = () => {
 
   return (
     <div className="space-y-6">
-      {insights && (
-        <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg shadow p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <TipsAndUpdatesIcon className="text-purple-600" />
-            <h3 className="text-lg font-bold text-gray-900">Your Learning Insights</h3>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white rounded-lg p-3">
-              <p className="text-sm text-gray-600">Total Sessions</p>
-              <p className="text-2xl font-bold text-purple-600">{insights.totalSessions}</p>
-            </div>
-            <div className="bg-white rounded-lg p-3">
-              <p className="text-sm text-gray-600">Most Studied</p>
-              <p className="text-lg font-bold text-gray-900 truncate">{insights.mostStudiedSubject}</p>
-            </div>
-            <div className="bg-white rounded-lg p-3">
-              <p className="text-sm text-gray-600">Learning Status</p>
-              <p className="text-lg font-bold text-green-600">{insights.learningStreak}</p>
-            </div>
-            <div className="bg-white rounded-lg p-3">
-              <p className="text-sm text-gray-600">Favorite Time</p>
-              <p className="text-lg font-bold text-gray-900">{insights.favoriteTime}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
@@ -171,8 +138,8 @@ const AIRecommendations = () => {
 
                   <div className="flex flex-wrap gap-1 justify-center mb-3">
                     {tutor.tutorProfile.subjects?.slice(0, 2).map((subject, idx) => (
-                      <span key={idx} className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs">
-                        {subject.name}
+                      <span key={idx} className="px-2 py-1.5 bg-purple-100 text-purple-700 rounded-lg text-xs whitespace-normal break-words">
+                        {subject.moduleCode ? `${subject.moduleCode} - ${subject.name}` : subject.name}
                       </span>
                     ))}
                   </div>
@@ -186,10 +153,6 @@ const AIRecommendations = () => {
                       ))}
                     </div>
                   )}
-
-                  <p className="text-xs text-center text-gray-500">
-                    {tutor.tutorProfile.totalSessions} sessions completed
-                  </p>
                 </>
               )}
 

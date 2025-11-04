@@ -1,9 +1,12 @@
 const User = require('../models/User');
 const Session = require('../models/Session');
+const Module = require('../models/Module');
 
 exports.getAllTutors = async (req, res) => {
   try {
     const { subject, rating, availability, location, moduleCode, sortBy } = req.query;
+
+    console.log('getAllTutors query params:', { subject, rating, availability, location, moduleCode, sortBy });
 
     let query = { isTutor: true };
 
@@ -16,8 +19,36 @@ exports.getAllTutors = async (req, res) => {
     }
 
     if (moduleCode) {
-      query['tutorProfile.subjects.name'] = { $regex: moduleCode, $options: 'i' };
+      const module = await Module.findOne({ moduleCode });
+      console.log('Found module:', module ? module.name : 'not found');
+      
+      if (module) {
+        const tutorIds = module.tutors || [];
+        
+        console.log('Module tutors array length:', tutorIds.length);
+        console.log('Module name:', module.name);
+        
+        if (tutorIds.length > 0) {
+          query.$or = [
+            { _id: { $in: tutorIds } },
+            { 'tutorProfile.subjects.moduleCode': moduleCode },
+            { 'tutorProfile.subjects.name': { $regex: module.name, $options: 'i' } }
+          ];
+        } else {
+          query.$or = [
+            { 'tutorProfile.subjects.moduleCode': moduleCode },
+            { 'tutorProfile.subjects.name': { $regex: module.name, $options: 'i' } }
+          ];
+        }
+      } else {
+        query.$or = [
+          { 'tutorProfile.subjects.moduleCode': moduleCode },
+          { 'tutorProfile.subjects.name': { $regex: moduleCode, $options: 'i' } }
+        ];
+      }
     }
+
+    console.log('Final query:', JSON.stringify(query, null, 2));
 
     let sortOptions = {};
     if (sortBy === 'rating') {
@@ -30,8 +61,10 @@ exports.getAllTutors = async (req, res) => {
       .select('-password')
       .sort(sortOptions);
 
+    console.log('Found tutors:', tutors.length);
     res.json(tutors);
   } catch (error) {
+    console.error('Error in getAllTutors:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };

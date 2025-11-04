@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const MODULES = require('../constants/modules');
 
 const generateUserId = () => {
   return 'U' + Date.now().toString().slice(-4) + Math.random().toString(36).substr(2, 4).toUpperCase();
@@ -8,11 +9,26 @@ const generateUserId = () => {
 
 exports.register = async (req, res) => {
   try {
-    const { email, password, name, phone, year, course } = req.body;
+    const { email, password, name, phone, year, course, tutorSubjects } = req.body;
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
+    }
+
+    if (!tutorSubjects || !Array.isArray(tutorSubjects) || tutorSubjects.length !== 3) {
+      return res.status(400).json({ message: 'Exactly 3 subjects are required' });
+    }
+
+    for (const subject of tutorSubjects) {
+      if (!subject.moduleCode || !subject.name || !subject.grade) {
+        return res.status(400).json({ message: 'Each subject must have moduleCode, name, and grade' });
+      }
+
+      const validModule = MODULES.find(m => m.moduleCode === subject.moduleCode && m.name === subject.name);
+      if (!validModule) {
+        return res.status(400).json({ message: `Invalid module: ${subject.moduleCode} - ${subject.name}` });
+      }
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -25,7 +41,24 @@ exports.register = async (req, res) => {
       name,
       phone,
       year,
-      course
+      course,
+      isTutor: true,
+      tutorProfile: {
+        subjects: tutorSubjects.map(s => ({
+          moduleCode: s.moduleCode,
+          name: s.name,
+          grade: s.grade,
+          sessions: 0
+        })),
+        rating: 0,
+        reviewCount: 0,
+        totalSessions: 0,
+        hoursTaught: 0,
+        responseRate: 0,
+        replyTime: '< 24 hours',
+        badges: [],
+        availability: []
+      }
     });
 
     await user.save();
@@ -44,7 +77,7 @@ exports.register = async (req, res) => {
         userId: user.userId,
         name: user.name,
         email: user.email,
-        role: user.role
+        isTutor: user.isTutor
       }
     });
   } catch (error) {
@@ -80,7 +113,6 @@ exports.login = async (req, res) => {
         userId: user.userId,
         name: user.name,
         email: user.email,
-        role: user.role,
         isTutor: user.isTutor
       }
     });

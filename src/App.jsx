@@ -5,23 +5,19 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import TutorDashboard from './pages/TutorDashboard';
 import FindTutors from './pages/FindTutors';
 import TutorProfile from './pages/TutorProfile';
 import BookingForm from './pages/BookingForm';
 import MyBookings from './pages/MyBookings';
-import Schedule from './pages/Schedule';
-import Messages from './pages/Messages';
 import SessionHistory from './pages/SessionHistory';
 import ProfileSettings from './pages/ProfileSettings';
 import SubjectBrowse from './pages/SubjectBrowse';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import PersonSearchIcon from '@mui/icons-material/PersonSearch';
-import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import BookOnlineIcon from '@mui/icons-material/BookOnline';
 import SettingsIcon from '@mui/icons-material/Settings';
-import NotificationsIcon from '@mui/icons-material/Notifications';
 import SearchIcon from '@mui/icons-material/Search';
-import MessageIcon from '@mui/icons-material/Message';
 import HistoryIcon from '@mui/icons-material/History';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -61,9 +57,7 @@ function AppContent() {
         <nav className="px-4 space-y-1 flex-1">
           <NavItem to="/" icon={<DashboardIcon />} text="Dashboard" />
           <NavItem to="/find-tutors" icon={<PersonSearchIcon />} text="Find Tutors" />
-          <NavItem to="/schedule" icon={<CalendarMonthIcon />} text="Schedule" />
-          <NavItem to="/bookings" icon={<BookOnlineIcon />} text="My Bookings" />
-          <NavItem to="/messages" icon={<MessageIcon />} text="Messages" />
+          <NavItem to="/bookings" icon={<BookOnlineIcon />} text={user?.isTutor ? 'My Sessions' : 'My Bookings'} />
           <NavItem to="/history" icon={<HistoryIcon />} text="History" />
           <NavItem to="/subjects" icon={<MenuBookIcon />} text="Subjects" />
           <NavItem to="/settings" icon={<SettingsIcon />} text="Settings" />
@@ -95,8 +89,7 @@ function AppContent() {
           </div>
 
           <div className="flex items-center gap-4">
-            <NotificationsIcon style={{ color: '#6b7280', fontSize: '22px', cursor: 'pointer' }} />
-            <div className="flex items-center gap-2.5">
+            <Link to="/settings" className="flex items-center gap-2.5 cursor-pointer hover:opacity-80 transition-opacity">
               <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-300">
                 {user?.profilePhoto ? (
                   <img src={user.profilePhoto} alt={user.name} className="w-full h-full object-cover" />
@@ -108,7 +101,7 @@ function AppContent() {
               </div>
               <span className="text-gray-900 text-sm font-medium">{user?.name}</span>
               <span className="text-gray-500" style={{ fontSize: '10px' }}>▼</span>
-            </div>
+            </Link>
           </div>
         </header>
 
@@ -117,13 +110,11 @@ function AppContent() {
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/find-tutors" element={<ProtectedRoute><FindTutors /></ProtectedRoute>} />
             <Route path="/tutor/:id" element={<ProtectedRoute><TutorProfile /></ProtectedRoute>} />
+            <Route path="/subjects" element={<ProtectedRoute><SubjectBrowse /></ProtectedRoute>} />
             <Route path="/booking/:id" element={<ProtectedRoute><BookingForm /></ProtectedRoute>} />
             <Route path="/bookings" element={<ProtectedRoute><MyBookings /></ProtectedRoute>} />
-            <Route path="/schedule" element={<ProtectedRoute><Schedule /></ProtectedRoute>} />
-            <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
             <Route path="/history" element={<ProtectedRoute><SessionHistory /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
-            <Route path="/subjects" element={<ProtectedRoute><SubjectBrowse /></ProtectedRoute>} />
           </Routes>
         </main>
       </div>

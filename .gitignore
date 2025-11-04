@@ -8,7 +8,7 @@
 # server dependencies
 server/node_modules
 
-USER_CREDENTIALS.md 
+USER_CREDENTIALS.md
 
 
 # testing
@@ -30,7 +30,7 @@ yarn-error.log*
 
 .cursor/
 
-.misc/
+misc/
 .env
-.markdown/
-.html/
+markdown/
+html/

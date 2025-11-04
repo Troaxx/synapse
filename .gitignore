@@ -7,6 +7,9 @@
 
 .server/node_modules
 
+.USER_CREDENTIALS.md 
+
+
 # testing
 /coverage
 

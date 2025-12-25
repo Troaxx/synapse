@@ -1,13 +1,13 @@
 import React from 'react';
-import StarIcon from '@mui/icons-material/Star';
-import StarBorderIcon from '@mui/icons-material/StarBorder';
-import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
-import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
-import SearchIcon from '@mui/icons-material/Search';
-import GridOnIcon from '@mui/icons-material/GridOn';
-import PaletteIcon from '@mui/icons-material/Palette';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import SchoolIcon from '@mui/icons-material/School';
+import StarIcon from '../assets/icons/star-solid.svg';
+import StarBorderIcon from '../assets/icons/star-outline.svg';
+import ArrowBackIosIcon from '../assets/icons/chevron-left.svg';
+import ArrowForwardIosIcon from '../assets/icons/chevron-right.svg';
+import SearchIcon from '../assets/icons/search.svg';
+import GridOnIcon from '../assets/icons/grid.svg';
+import PaletteIcon from '../assets/icons/palette.svg';
+import AccessTimeIcon from '../assets/icons/clock.svg';
+import SchoolIcon from '../assets/icons/school.svg';
 
 function Home() {
   return (
@@ -29,11 +29,11 @@ function Home() {
               <div className="text-base font-semibold mb-0.5" style={{ color: '#111827' }}>Aaron Sim</div>
               <div className="text-sm mb-2" style={{ color: '#6b7280' }}>Year 2</div>
               <div className="flex items-center gap-0.5">
-                <StarIcon style={{ color: '#fbbf24', fontSize: '16px' }} />
-                <StarIcon style={{ color: '#fbbf24', fontSize: '16px' }} />
-                <StarIcon style={{ color: '#fbbf24', fontSize: '16px' }} />
-                <StarIcon style={{ color: '#fbbf24', fontSize: '16px' }} />
-                <StarBorderIcon style={{ color: '#d1d5db', fontSize: '16px' }} />
+                <img src={StarIcon} alt="star" className="w-4 h-4" style={{ filter: 'invert(84%) sepia(31%) saturate(5885%) hue-rotate(334deg) brightness(101%) contrast(101%)' }} />
+                <img src={StarIcon} alt="star" className="w-4 h-4" style={{ filter: 'invert(84%) sepia(31%) saturate(5885%) hue-rotate(334deg) brightness(101%) contrast(101%)' }} />
+                <img src={StarIcon} alt="star" className="w-4 h-4" style={{ filter: 'invert(84%) sepia(31%) saturate(5885%) hue-rotate(334deg) brightness(101%) contrast(101%)' }} />
+                <img src={StarIcon} alt="star" className="w-4 h-4" style={{ filter: 'invert(84%) sepia(31%) saturate(5885%) hue-rotate(334deg) brightness(101%) contrast(101%)' }} />
+                <img src={StarBorderIcon} alt="star empty" className="w-4 h-4" style={{ filter: 'invert(90%) sepia(5%) saturate(166%) hue-rotate(180deg) brightness(85%) contrast(85%)' }} />
               </div>
             </div>
           </div>
@@ -67,9 +67,9 @@ function Home() {
         {/* Card 3: Calendar */}
         <div className="bg-white rounded-lg p-5 border" style={{ borderColor: '#e5e7eb', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
           <div className="flex items-center justify-between mb-3">
-            <button><ArrowBackIosIcon style={{ color: '#9ca3af', fontSize: '14px' }} /></button>
+            <button><img src={ArrowBackIosIcon} alt="back" className="w-3.5 h-3.5 opacity-50" /></button>
             <span className="font-semibold text-sm" style={{ color: '#374151' }}>October 2025</span>
-            <button><ArrowForwardIosIcon style={{ color: '#9ca3af', fontSize: '14px' }} /></button>
+            <button><img src={ArrowForwardIosIcon} alt="next" className="w-3.5 h-3.5 opacity-50" /></button>
           </div>
           <div className="grid grid-cols-7 gap-1 text-center text-xs mb-2">
             {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => (
@@ -84,12 +84,12 @@ function Home() {
               19, 20, 21, 22, 23, 24, 25,
               26, 27, 28, 29, 30, 31
             ].map((day, index) => (
-              <div 
-                key={index} 
-                className={`py-2 ${day === 10 ? 'rounded-full font-semibold text-white' : ''}`} 
-                style={{ 
-                  color: day === 10 ? 'white' : (day ? '#374151' : 'transparent'), 
-                  backgroundColor: day === 10 ? '#0A0338' : 'transparent' 
+              <div
+                key={index}
+                className={`py-2 ${day === 10 ? 'rounded-full font-semibold text-white' : ''}`}
+                style={{
+                  color: day === 10 ? 'white' : (day ? '#374151' : 'transparent'),
+                  backgroundColor: day === 10 ? '#0A0338' : 'transparent'
                 }}
               >
                 {day || ''}
@@ -111,7 +111,7 @@ function Home() {
               <span className="text-sm" style={{ color: '#6b7280' }}>Hours Spent</span>
             </div>
           </div>
-          
+
           <div className="relative">
             <div className="flex items-end justify-between gap-4 h-40 px-2 pb-6">
               {[
@@ -125,23 +125,23 @@ function Home() {
                 const totalHeight = (data.lessons + data.hours) / maxValue * 100;
                 const hoursHeight = (data.hours / maxValue) * 100;
                 const lessonsHeight = (data.lessons / maxValue) * 100;
-                
+
                 return (
                   <div key={idx} className="flex-1 flex flex-col items-center gap-2 group relative">
                     <div className="w-full h-32 flex flex-col justify-end relative">
                       <div className="w-full flex flex-col justify-end" style={{ height: `${totalHeight}%` }}>
-                        <div 
+                        <div
                           className="w-full rounded-t-sm"
-                          style={{ 
-                            height: `${(lessonsHeight / totalHeight) * 100}%`, 
-                            backgroundColor: '#0A0338' 
+                          style={{
+                            height: `${(lessonsHeight / totalHeight) * 100}%`,
+                            backgroundColor: '#0A0338'
                           }}
                         />
-                        <div 
+                        <div
                           className="w-full"
-                          style={{ 
-                            height: `${(hoursHeight / totalHeight) * 100}%`, 
-                            backgroundColor: '#fde68a' 
+                          style={{
+                            height: `${(hoursHeight / totalHeight) * 100}%`,
+                            backgroundColor: '#fde68a'
                           }}
                         />
                       </div>
@@ -180,13 +180,13 @@ function Home() {
             <div className="relative" style={{ width: '160px', height: '160px' }}>
               <svg viewBox="0 0 200 200" className="w-full h-full" style={{ transform: 'rotate(-90deg)' }}>
                 <circle cx="100" cy="100" r="70" fill="none" stroke="#e5e7eb" strokeWidth="20" />
-                <circle 
-                  cx="100" 
-                  cy="100" 
-                  r="70" 
-                  fill="none" 
-                  stroke="#0A0338" 
-                  strokeWidth="20" 
+                <circle
+                  cx="100"
+                  cy="100"
+                  r="70"
+                  fill="none"
+                  stroke="#0A0338"
+                  strokeWidth="20"
                   strokeDasharray={`${(3.15 / 4) * 440} 440`}
                   strokeLinecap="round"
                 />
@@ -213,8 +213,8 @@ function Home() {
               { text: 'Basics of Figma', date: 'Friday, 05 June 2024', checked: true }
             ].map((item, index) => (
               <div key={index} className="flex items-start gap-3">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   checked={item.checked}
                   readOnly
                   className="w-4 h-4 mt-0.5 cursor-pointer"
@@ -237,30 +237,30 @@ function Home() {
             <h2 className="text-base font-semibold" style={{ color: '#111827' }}>Recent Sessions</h2>
             <div className="flex items-center gap-2">
               <span className="text-sm" style={{ color: '#6b7280' }}>All</span>
-              <SearchIcon style={{ color: '#9ca3af', fontSize: '18px' }} />
+              <img src={SearchIcon} alt="search" className="w-5 h-5 opacity-40" />
             </div>
           </div>
           <div className="space-y-3">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#f3f4f6' }}>
-                <GridOnIcon style={{ color: '#6b7280', fontSize: '20px' }} />
+                <img src={GridOnIcon} alt="grid" className="w-5 h-5 opacity-50" />
               </div>
               <div className="flex-1">
                 <div className="text-sm font-semibold mb-1" style={{ color: '#111827' }}>User Experience (UX) Design</div>
                 <div className="flex items-center gap-1 text-xs" style={{ color: '#6b7280' }}>
-                  <AccessTimeIcon style={{ fontSize: '12px' }} />
+                  <img src={AccessTimeIcon} alt="time" className="w-3 h-3" />
                   <span>2hrs</span>
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#f3f4f6' }}>
-                <PaletteIcon style={{ color: '#6b7280', fontSize: '20px' }} />
+                <img src={PaletteIcon} alt="palette" className="w-5 h-5 opacity-50" />
               </div>
               <div className="flex-1">
                 <div className="text-sm font-semibold mb-1" style={{ color: '#111827' }}>Visual Design and Branding</div>
                 <div className="flex items-center gap-1 text-xs" style={{ color: '#6b7280' }}>
-                  <AccessTimeIcon style={{ fontSize: '12px' }} />
+                  <img src={AccessTimeIcon} alt="time" className="w-3 h-3" />
                   <span>4:00hrs</span>
                 </div>
               </div>
@@ -274,7 +274,7 @@ function Home() {
           <div className="space-y-4">
             <div className="flex items-center gap-3 pb-4 border-b" style={{ borderColor: '#e5e7eb' }}>
               <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#f3f4f6' }}>
-                <SchoolIcon style={{ color: '#6b7280', fontSize: '20px' }} />
+                <img src={SchoolIcon} alt="school" className="w-5 h-5 opacity-50" />
               </div>
               <div className="flex-1">
                 <div className="text-sm font-semibold mb-0.5" style={{ color: '#111827' }}>DevOps Essentials</div>
@@ -286,7 +286,7 @@ function Home() {
             </div>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#f3f4f6' }}>
-                <SchoolIcon style={{ color: '#6b7280', fontSize: '20px' }} />
+                <img src={SchoolIcon} alt="school" className="w-5 h-5 opacity-50" />
               </div>
               <div className="flex-1">
                 <div className="text-sm font-semibold mb-0.5" style={{ color: '#111827' }}>Machine Learning for Developers</div>
@@ -304,4 +304,3 @@ function Home() {
 }
 
 export default Home;
-

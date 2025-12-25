@@ -18,7 +18,7 @@ const SubjectBrowse = () => {
       setLoading(true);
       const response = await moduleAPI.getAllModules();
       const modulesData = response.data || [];
-      
+
       const formattedModules = modulesData.map(module => ({
         code: module.moduleCode,
         name: module.name,
@@ -32,7 +32,7 @@ const SubjectBrowse = () => {
           sessions: tutor.tutorProfile?.totalSessions || 0
         })) || []
       }));
-      
+
       setModules(formattedModules);
     } catch (error) {
       console.error('Error loading modules:', error);
@@ -41,7 +41,7 @@ const SubjectBrowse = () => {
     }
   };
 
-  const filteredModules = selectedModuleCode 
+  const filteredModules = selectedModuleCode
     ? modules.filter(m => m.code === selectedModuleCode)
     : modules;
 
@@ -67,68 +67,68 @@ const SubjectBrowse = () => {
         ) : (
           <div className="grid grid-cols-1 gap-6">
             {filteredModules.map(module => (
-            <div key={module.code} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-6">
-              <div className="flex flex-col lg:flex-row justify-between gap-6">
-                <div className="flex-1">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <div className="flex items-center gap-3 mb-2">
-                        <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg font-mono font-semibold text-sm">
-                          {module.code}
-                        </span>
-                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm">
-                          {module.tutorCount} tutors available
-                        </span>
+              <div key={module.code} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-6">
+                <div className="flex flex-col lg:flex-row justify-between gap-6">
+                  <div className="flex-1">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg font-mono font-semibold text-sm">
+                            {module.code}
+                          </span>
+                          <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm">
+                            {module.tutorCount} tutors available
+                          </span>
+                        </div>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-2">{module.name}</h2>
+                        <p className="text-gray-600">{module.school}</p>
                       </div>
-                      <h2 className="text-2xl font-bold text-gray-900 mb-2">{module.name}</h2>
-                      <p className="text-gray-600">{module.school} | {module.diploma}</p>
                     </div>
-                  </div>
 
-                  {module.tutors.length > 0 && (
-                    <div className="mt-4">
-                      <h3 className="text-sm font-semibold text-gray-700 mb-3">Featured Tutors</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {module.tutors.map(tutor => (
-                          <div
-                            key={tutor.id}
-                            onClick={() => navigate(`/tutor/${tutor.id}`)}
-                            className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 cursor-pointer transition-colors"
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-gray-300 rounded-full flex-shrink-0"></div>
-                              <div className="flex-1 min-w-0">
-                                <h4 className="font-semibold text-gray-900 truncate">{tutor.name}</h4>
-                                <div className="flex items-center text-sm">
-                                  <span className="text-yellow-500">★</span>
-                                  <span className="ml-1 text-gray-700">{tutor.rating}</span>
+                    {module.tutors.length > 0 && (
+                      <div className="mt-4">
+                        <h3 className="text-sm font-semibold text-gray-700 mb-3">Featured Tutors</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {module.tutors.map(tutor => (
+                            <div
+                              key={tutor.id}
+                              onClick={() => navigate(`/tutor/${tutor.id}`)}
+                              className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 cursor-pointer transition-colors"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-gray-300 rounded-full flex-shrink-0"></div>
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-semibold text-gray-900 truncate">{tutor.name}</h4>
+                                  <div className="flex items-center text-sm">
+                                    <span className="text-yellow-500">★</span>
+                                    <span className="ml-1 text-gray-700">{tutor.rating}</span>
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </div>
 
-                <div className="flex lg:flex-col gap-2 lg:w-48">
-                  <button
-                    onClick={() => navigate('/find-tutors')}
-                    className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
-                  >
-                    View All Tutors
-                  </button>
-                  <button
-                    onClick={() => navigate('/find-tutors')}
-                    className="flex-1 bg-gray-200 text-gray-800 py-3 px-4 rounded-lg hover:bg-gray-300 transition-colors font-semibold"
-                  >
-                    Find Tutor
-                  </button>
+                  <div className="flex lg:flex-col gap-2 lg:w-48">
+                    <button
+                      onClick={() => navigate('/find-tutors')}
+                      className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                    >
+                      View All Tutors
+                    </button>
+                    <button
+                      onClick={() => navigate('/find-tutors')}
+                      className="flex-1 bg-gray-200 text-gray-800 py-3 px-4 rounded-lg hover:bg-gray-300 transition-colors font-semibold"
+                    >
+                      Find Tutor
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
           </div>
         )}
 

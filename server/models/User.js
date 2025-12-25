@@ -12,6 +12,12 @@ const userSchema = new mongoose.Schema({
     unique: true,
     lowercase: true
   },
+  admissionNumber: {
+    type: String,
+    required: true,
+    unique: true,
+    uppercase: true
+  },
   password: {
     type: String,
     required: true
@@ -131,7 +137,9 @@ const userSchema = new mongoose.Schema({
   memberSince: {
     type: Date,
     default: Date.now
-  }
+  },
+  resetPasswordToken: String,
+  resetPasswordExpires: Date
 }, {
   timestamps: true
 });

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { recommendationAPI } from '../services/api';
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import SparklesIcon from '../assets/icons/sparkles.svg';
 
 const AIRecommendations = () => {
   const navigate = useNavigate();
@@ -32,7 +32,7 @@ const AIRecommendations = () => {
     return (
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center gap-2 mb-4">
-          <AutoAwesomeIcon className="text-purple-600" />
+          <img src={SparklesIcon} alt="AI" className="w-6 h-6 text-purple-600" style={{ filter: 'invert(37%) sepia(38%) saturate(7181%) hue-rotate(256deg) brightness(87%) contrast(102%)' }} />
           <h2 className="text-xl font-bold text-gray-900">AI-Powered Recommendations</h2>
         </div>
         <div className="text-center py-8">
@@ -47,12 +47,12 @@ const AIRecommendations = () => {
     return (
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center gap-2 mb-4">
-          <AutoAwesomeIcon className="text-purple-600" />
+          <img src={SparklesIcon} alt="AI" className="w-6 h-6 text-purple-600" style={{ filter: 'invert(37%) sepia(38%) saturate(7181%) hue-rotate(256deg) brightness(87%) contrast(102%)' }} />
           <h2 className="text-xl font-bold text-gray-900">AI-Powered Recommendations</h2>
         </div>
         <div className="text-center py-8 text-gray-600">
           <p>{error}</p>
-          <button 
+          <button
             onClick={loadRecommendations}
             className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
           >
@@ -68,10 +68,10 @@ const AIRecommendations = () => {
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <AutoAwesomeIcon className="text-purple-600" />
+            <img src={SparklesIcon} alt="AI" className="w-6 h-6 text-purple-600" style={{ filter: 'invert(37%) sepia(38%) saturate(7181%) hue-rotate(256deg) brightness(87%) contrast(102%)' }} />
             <h2 className="text-xl font-bold text-gray-900">Personalized Tutor Recommendations</h2>
           </div>
-          <button 
+          <button
             onClick={loadRecommendations}
             className="text-sm text-blue-600 hover:text-blue-700 font-medium"
           >
@@ -112,7 +112,7 @@ const AIRecommendations = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {recommendations?.recommendations?.map((tutor, index) => (
-            <div 
+            <div
               key={tutor._id}
               className="border-2 border-purple-200 rounded-lg p-4 hover:shadow-lg transition-all cursor-pointer relative"
               onClick={() => navigate(`/tutor/${tutor._id}`)}
@@ -125,7 +125,7 @@ const AIRecommendations = () => {
               <div className="w-16 h-16 bg-gray-300 rounded-full mx-auto mb-3"></div>
               <h3 className="font-semibold text-center text-gray-900 mb-1">{tutor.name}</h3>
               <p className="text-sm text-gray-600 text-center mb-2">{tutor.year}</p>
-              
+
               {tutor.tutorProfile && (
                 <>
                   <div className="flex items-center justify-center mb-2">
@@ -156,7 +156,7 @@ const AIRecommendations = () => {
                 </>
               )}
 
-              <button 
+              <button
                 onClick={(e) => {
                   e.stopPropagation();
                   navigate(`/tutor/${tutor._id}`);
@@ -180,4 +180,3 @@ const AIRecommendations = () => {
 };
 
 export default AIRecommendations;
-

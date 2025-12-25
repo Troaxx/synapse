@@ -14,8 +14,10 @@ const Register = () => {
     password: '',
     confirmPassword: '',
     phone: '',
+    admissionNumber: '',
     year: 'Year 1',
     course: '',
+    isNotTutor: false, // NEW STATE
     tutorSubjects: [
       { moduleCode: '', name: '', grade: '' },
       { moduleCode: '', name: '', grade: '' },
@@ -26,15 +28,16 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
+    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: value
     });
   };
 
   const handleSubjectChange = (index, field, value) => {
     const updatedSubjects = [...formData.tutorSubjects];
-    
+
     if (field === 'moduleCode') {
       const selectedModule = MODULES.find(m => m.moduleCode === value);
       if (selectedModule) {
@@ -47,7 +50,7 @@ const Register = () => {
     } else {
       updatedSubjects[index][field] = value;
     }
-    
+
     setFormData({
       ...formData,
       tutorSubjects: updatedSubjects
@@ -58,34 +61,52 @@ const Register = () => {
     e.preventDefault();
     setError('');
 
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+    const emailRegex = /^\d{7}[a-zA-Z]@student\.tp\.edu\.sg$/;
+    if (!emailRegex.test(formData.email)) {
+      setError('Email must follow format: Admission Number + @student.tp.edu.sg (e.g. 2404908B@student.tp.edu.sg)');
       return;
     }
 
-    const emptySubjects = formData.tutorSubjects.filter(s => !s.moduleCode || !s.name || !s.grade);
-    if (emptySubjects.length > 0) {
-      setError('Please select all 3 subjects and their grades');
+    const adminNoRegex = /^\d{7}[A-Z]$/;
+    if (!adminNoRegex.test(formData.admissionNumber)) {
+      setError('Admission Number must follow format: 7 digits followed by a letter (e.g. 2404908B)');
       return;
     }
 
-    const uniqueModules = new Set(formData.tutorSubjects.map(s => s.moduleCode));
-    if (uniqueModules.size !== 3) {
-      setError('Please select 3 different subjects');
+    // Check if Email matches Admission Number
+    const emailPrefix = formData.email.split('@')[0].toUpperCase();
+    if (emailPrefix !== formData.admissionNumber) {
+      setError('Email must match your Admission Number');
       return;
+    }
+
+    if (!formData.isNotTutor) {
+      const emptySubjects = formData.tutorSubjects.filter(s => !s.moduleCode || !s.name || !s.grade);
+      if (emptySubjects.length > 0) {
+        setError('Please select all 3 subjects and their grades');
+        return;
+      }
+
+      const uniqueModules = new Set(formData.tutorSubjects.map(s => s.moduleCode));
+      if (uniqueModules.size !== 3) {
+        setError('Please select 3 different subjects');
+        return;
+      }
     }
 
     setLoading(true);
 
-    const { confirmPassword, ...registerData } = formData;
-    const result = await register(registerData);
-    
+    const { confirmPassword, isNotTutor, ...registerData } = formData;
+    const payload = { ...registerData, isTutor: !isNotTutor };
+
+    const result = await register(payload);
+
     if (result.success) {
       navigate('/');
     } else {
       setError(result.message);
     }
-    
+
     setLoading(false);
   };
 
@@ -138,7 +159,7 @@ const Register = () => {
                 autoComplete="email"
                 required
                 className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                placeholder="john.doe@student.tp.edu.sg"
+                placeholder="2404908B@student.tp.edu.sg"
                 value={formData.email}
                 onChange={handleChange}
               />
@@ -156,6 +177,22 @@ const Register = () => {
                 placeholder="+65 9123 4567"
                 value={formData.phone}
                 onChange={handleChange}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="admissionNumber" className="block text-sm font-medium text-gray-700">
+                Admission Number
+              </label>
+              <input
+                id="admissionNumber"
+                name="admissionNumber"
+                type="text"
+                required
+                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm uppercase"
+                placeholder="2404908B"
+                value={formData.admissionNumber}
+                onChange={(e) => handleChange({ ...e, target: { ...e.target, name: e.target.name, value: e.target.value.toUpperCase() } })}
               />
             </div>
 
@@ -193,59 +230,78 @@ const Register = () => {
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Subjects You Can Tutor (Select 3)
-              </label>
-              {formData.tutorSubjects.map((subject, index) => {
-                const availableModules = MODULES.filter(m => {
-                  const usedModules = formData.tutorSubjects
-                    .filter((_, i) => i !== index)
-                    .map(s => s.moduleCode);
-                  return !usedModules.includes(m.moduleCode) || m.moduleCode === subject.moduleCode;
-                });
+            <div className="flex items-start bg-blue-50 p-4 rounded-md">
+              <div className="flex items-center h-5">
+                <input
+                  id="isNotTutor"
+                  name="isNotTutor"
+                  type="checkbox"
+                  checked={formData.isNotTutor}
+                  onChange={handleChange}
+                  className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"
+                />
+              </div>
+              <div className="ml-3 text-sm">
+                <label htmlFor="isNotTutor" className="font-medium text-gray-700">I am not interested in tutoring</label>
+                <p className="text-gray-500">You can change this later in your profile settings.</p>
+              </div>
+            </div>
 
-                return (
-                  <div key={index} className="mb-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Subject {index + 1}
-                    </label>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs text-gray-600 mb-1">Module</label>
-                        <select
-                          value={subject.moduleCode}
-                          onChange={(e) => handleSubjectChange(index, 'moduleCode', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 bg-white rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
-                          required
-                        >
-                          <option value="">Select module</option>
-                          {availableModules.map(module => (
-                            <option key={module.moduleCode} value={module.moduleCode}>
-                              {module.moduleCode} - {module.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-xs text-gray-600 mb-1">Grade</label>
-                        <select
-                          value={subject.grade}
-                          onChange={(e) => handleSubjectChange(index, 'grade', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 bg-white rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
-                          required
-                        >
-                          <option value="">Select grade</option>
-                          {GRADES.map(grade => (
-                            <option key={grade} value={grade}>{grade}</option>
-                          ))}
-                        </select>
+            {!formData.isNotTutor && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Subjects You Can Tutor (Select 3)
+                </label>
+                {formData.tutorSubjects.map((subject, index) => {
+                  const availableModules = MODULES.filter(m => {
+                    const usedModules = formData.tutorSubjects
+                      .filter((_, i) => i !== index)
+                      .map(s => s.moduleCode);
+                    return !usedModules.includes(m.moduleCode) || m.moduleCode === subject.moduleCode;
+                  });
+
+                  return (
+                    <div key={index} className="mb-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Subject {index + 1}
+                      </label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs text-gray-600 mb-1">Module</label>
+                          <select
+                            value={subject.moduleCode}
+                            onChange={(e) => handleSubjectChange(index, 'moduleCode', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 bg-white rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
+                            required
+                          >
+                            <option value="">Select module</option>
+                            {availableModules.map(module => (
+                              <option key={module.moduleCode} value={module.moduleCode}>
+                                {module.moduleCode} - {module.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-600 mb-1">Grade</label>
+                          <select
+                            value={subject.grade}
+                            onChange={(e) => handleSubjectChange(index, 'grade', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 bg-white rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
+                            required
+                          >
+                            <option value="">Select grade</option>
+                            {GRADES.map(grade => (
+                              <option key={grade} value={grade}>{grade}</option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">

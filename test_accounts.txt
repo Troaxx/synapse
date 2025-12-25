@@ -1,0 +1,110 @@
+TEST ACCOUNTS PLAN
+================================================================================
+
+All accounts share this base config unless specified:
+Password: Password123!
+Year: Year 2
+Course: Diploma in Information Technology
+
+1. Standard Student (No Tutor Interest)
+   Email: student1@student.tp.edu.sg
+   Name: Alice Tan
+   Role: Student Only
+   Tutor Mode: Off
+   Attributes:
+   - Just wants to book sessions.
+   - Clean slate, no notifications customized.
+
+2. Aspiring Tutor (Registered as Tutor)
+   Email: tutor1@student.tp.edu.sg
+   Name: Bob Lim
+   Role: Tutor
+   Subjects:
+   - CIA1C06 (Database Application Development) - A
+   - CIT2C18 (Mobile App Development) - A
+   - CIT1C18 (Computational Thinking) - B+
+   Attributes:
+   - High ratings (initialized at 4.5 if possible).
+   - Has availability set.
+
+3. Mixed User (Tutor who also books)
+   Email: mixed1@student.tp.edu.sg
+   Name: Charlie Chan
+   Role: Tutor
+   Subjects:
+   - CIA1C07 (Logic and Mathematics) - A
+   - CIT2C23 (Agile) - A
+   - CCF1C03 (Cybersecurity) - A
+   Attributes:
+   - Has booked 2 sessions as a student.
+   - Has hosted 5 sessions as a tutor.
+
+4. "Bad" Tutor (Low Ratings)
+   Email: tutor_bad@student.tp.edu.sg
+   Name: David Teo
+   Role: Tutor
+   Subjects:
+   - CIT2C20 (Full Stack) - B
+   - CIT2C24 (Cloud) - B+
+   - CIT2C29 (App Security) - B
+   Attributes:
+   - Rating: 2.5 stars.
+   - Late response time.
+
+5. High Achiever Student (Year 1)
+   Email: student_y1@student.tp.edu.sg
+   Name: Eve Koh
+   Role: Student Only
+   Year: Year 1
+   Attributes:
+   - Looking for help in Year 1 common mods.
+   - Heavy notification user (all enabled).
+
+6. Senior Tutor (Year 3)
+   Email: tutor_senior@student.tp.edu.sg
+   Name: Frank Ng
+   Role: Tutor
+   Year: Year 3
+   Subjects:
+   - CAI2C08 (Machine Learning) - A+
+   - CMC2C16 (IoT) - A
+   - CIT2C22 (DevOps) - A
+   Attributes:
+   - Experienced, 50+ sessions taught.
+   - Badge: "Top Rated".
+
+7. Edge Case: Tutor with Minimum Subjects
+   Email: tutor_min@student.tp.edu.sg
+   Name: Grace Wong
+   Role: Tutor
+   Subjects:
+   - CIT1C14 (Data Structures) - B
+   - CIT1C19 (UI/UX) - B
+   - CCF1C04 (Network) - A
+   Attributes:
+   - Bare minimum grades acceptable (B/B+).
+   - No bio.
+
+8. Edge Case: Student with Profile Privacy
+   Email: private_student@student.tp.edu.sg
+   Name: Harry Lee
+   Role: Student Only
+   Attributes:
+   - Profile Visibility: Off.
+   - Show Email: Off.
+
+9. Notification Free User
+   Email: quiet@student.tp.edu.sg
+   Name: Irene Soh
+   Role: Student Only
+   Attributes:
+   - All notifications disabled (Push & Email).
+
+10. The "Quitter" (Tutor who disabled Tutor Mode)
+    Email: ex_tutor@student.tp.edu.sg
+    Name: Jacky Tan
+    Role: Tutor (Technically)
+    Attributes:
+    - Registered as tutor initially.
+    - Manually toggled "Tutor Mode" OFF in settings (if feature existed, otherwise simulating a tutor who is unavailable).
+    - Has historic ratings but no current availability.

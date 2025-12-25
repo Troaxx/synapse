@@ -13,7 +13,6 @@ class AIRecommendationService {
     if (process.env.GEMINI_API_KEY) {
       try {
         this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        // Try gemini-1.5-flash first (faster and cheaper), fallback to gemini-1.5-pro if needed
         this.model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
       } catch (error) {
         console.warn('Error initializing Gemini AI:', error.message);

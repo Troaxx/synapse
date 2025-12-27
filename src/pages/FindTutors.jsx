@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { tutorAPI } from '../services/api';
 import ModuleFilter from '../components/ModuleFilter';
+import { useAuth } from '../context/AuthContext';
 
 const FindTutors = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedModuleCode, setSelectedModuleCode] = useState('');
   const [selectedRating, setSelectedRating] = useState('');
@@ -28,8 +30,15 @@ const FindTutors = () => {
 
       console.log('Loading tutors with params:', params);
       const response = await tutorAPI.getAllTutors(params);
-      console.log('Tutors response:', response.data);
-      setTutors(response.data || []);
+
+      // Filter out the current user
+      const allTutors = response.data || [];
+      const currentUserId = user?._id || user?.id;
+      const otherTutors = allTutors.filter(t =>
+        t._id !== currentUserId && t.id !== currentUserId
+      );
+
+      setTutors(otherTutors);
     } catch (error) {
       console.error('Error loading tutors:', error);
       setTutors([]);
@@ -42,7 +51,7 @@ const FindTutors = () => {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       const matchesName = tutor.name?.toLowerCase().includes(query);
-      const matchesSubject = tutor.tutorProfile?.subjects?.some(s => 
+      const matchesSubject = tutor.tutorProfile?.subjects?.some(s =>
         s.name?.toLowerCase().includes(query)
       );
       return matchesName || matchesSubject;
@@ -81,7 +90,7 @@ const FindTutors = () => {
           <div className="lg:w-64 flex-shrink-0">
             <div className="bg-white rounded-lg shadow p-6 sticky top-4">
               <h2 className="text-lg font-bold text-gray-900 mb-4">Filters</h2>
-              
+
               <ModuleFilter
                 selectedModuleCode={selectedModuleCode}
                 onModuleChange={setSelectedModuleCode}
@@ -146,7 +155,7 @@ const FindTutors = () => {
                 </div>
               </div>
 
-              <button 
+              <button
                 onClick={handleClearFilters}
                 className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 rounded-lg transition-colors font-medium"
               >
@@ -158,7 +167,7 @@ const FindTutors = () => {
           <div className="flex-1">
             <div className="flex justify-between items-center mb-4">
               <p className="text-gray-700 font-medium">{loading ? 'Loading...' : `${filteredTutors.length} tutors found`}</p>
-              <select 
+              <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -213,13 +222,13 @@ const FindTutors = () => {
                     )}
 
                     <div className="flex gap-2">
-                      <button 
+                      <button
                         onClick={() => navigate(`/tutor/${tutor._id}`)}
                         className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
                       >
                         View Profile
                       </button>
-                      <button 
+                      <button
                         onClick={() => navigate(`/booking/${tutor._id}`)}
                         className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors font-medium"
                       >

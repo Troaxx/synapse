@@ -77,5 +77,22 @@ export const recommendationAPI = {
   getInsights: () => api.get('/recommendations/insights')
 };
 
+export const reportAPI = {
+  createReport: (data) => api.post('/reports', data)
+};
+
+export const adminAPI = {
+  getAllReports: () => api.get('/admin/reports'),
+  dismissReport: (id) => api.put(`/admin/reports/${id}/dismiss`),
+  resolveReport: (id) => api.put(`/admin/reports/${id}/resolve`),
+  getAllUsers: () => api.get('/admin/users'),
+  updateUser: (id, data) => api.put(`/admin/users/${id}`, data)
+};
+
+export const notificationAPI = {
+  getNotifications: () => api.get('/notifications'),
+  markAsRead: (id) => api.put(`/notifications/${id}/read`)
+};
+
 export default api;
 

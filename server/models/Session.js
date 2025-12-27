@@ -28,20 +28,17 @@ const sessionSchema = new mongoose.Schema({
     required: true
   },
   date: {
-    type: Date,
-    required: true
+    type: Date
   },
   time: {
-    type: String,
-    required: true
+    type: String
   },
   duration: {
     type: Number,
     required: true
   },
   location: {
-    type: String,
-    required: true
+    type: String
   },
   notes: {
     type: String

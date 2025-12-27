@@ -88,8 +88,8 @@ exports.getSessionById = async (req, res) => {
       return res.status(404).json({ message: 'Session not found' });
     }
 
-    if (session.student._id.toString() !== req.user.userId && 
-        session.tutor._id.toString() !== req.user.userId) {
+    if (session.student._id.toString() !== req.user.userId &&
+      session.tutor._id.toString() !== req.user.userId) {
       return res.status(403).json({ message: 'Access denied' });
     }
 
@@ -158,6 +158,20 @@ exports.addReview = async (req, res) => {
     await session.save();
 
     const tutor = await User.findById(session.tutor);
+
+    if (!tutor.tutorProfile) {
+      tutor.tutorProfile = {
+        rating: 0,
+        reviewCount: 0,
+        totalSessions: 0,
+        hoursTaught: 0,
+        responseRate: 0,
+        subjects: [],
+        badges: [],
+        availability: []
+      };
+    }
+
     const allReviews = await Session.find({
       tutor: session.tutor,
       'review.rating': { $exists: true }
@@ -182,8 +196,8 @@ exports.cancelSession = async (req, res) => {
       return res.status(404).json({ message: 'Session not found' });
     }
 
-    if (session.student.toString() !== req.user.userId && 
-        session.tutor.toString() !== req.user.userId) {
+    if (session.student.toString() !== req.user.userId &&
+      session.tutor.toString() !== req.user.userId) {
       return res.status(403).json({ message: 'Access denied' });
     }
 

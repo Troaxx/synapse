@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { MODULES } from '../constants/modules';
 
-const GRADES = ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'F'];
+const GRADES = ['Z / Distinction  ', 'A', 'B+', 'B'];
 
 const Register = () => {
   const navigate = useNavigate();
@@ -29,6 +29,19 @@ const Register = () => {
 
   const handleChange = (e) => {
     const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+
+    // If year changes, check if course is still valid
+    if (e.target.name === 'year') {
+      if (value !== 'Year 1' && formData.course === 'Diploma in Common ICT') {
+        setFormData({
+          ...formData,
+          year: value,
+          course: '' // Reset course if it was Common ICT and year changed to Y2/Y3
+        });
+        return;
+      }
+    }
+
     setFormData({
       ...formData,
       [e.target.name]: value
@@ -218,15 +231,24 @@ const Register = () => {
                 <label htmlFor="course" className="block text-sm font-medium text-gray-700">
                   Course
                 </label>
-                <input
+                <select
                   id="course"
                   name="course"
-                  type="text"
-                  className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="Diploma in IT"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   value={formData.course}
                   onChange={handleChange}
-                />
+                  required
+                >
+                  <option value="">Select course</option>
+                  {formData.year === 'Year 1' && (
+                    <option value="Diploma in Common ICT">Diploma in Common ICT</option>
+                  )}
+                  <option value="Diploma in Information Technology">Diploma in Information Technology</option>
+                  <option value="Diploma in Big Data & Analytics">Diploma in Big Data & Analytics</option>
+                  <option value="Diploma in Cybersecurity and Digital Forensics">Diploma in Cybersecurity and Digital Forensics</option>
+                  <option value="Diploma in Applied Artificial Intelligence">Diploma in Applied Artificial Intelligence</option>
+                  <option value="Diploma in Immersive Media & Game Development">Diploma in Immersive Media & Game Development</option>
+                </select>
               </div>
             </div>
 

@@ -47,6 +47,10 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  isAdmin: {
+    type: Boolean,
+    default: false
+  },
   tutorProfile: {
     rating: {
       type: Number,

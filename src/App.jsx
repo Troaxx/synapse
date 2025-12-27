@@ -10,11 +10,13 @@ import FindTutors from './pages/FindTutors';
 import TutorProfile from './pages/TutorProfile';
 import BookingForm from './pages/BookingForm';
 import MyBookings from './pages/MyBookings';
+import SessionDetails from './pages/SessionDetails';
 import SessionHistory from './pages/SessionHistory';
 import ProfileSettings from './pages/ProfileSettings';
 import SubjectBrowse from './pages/SubjectBrowse';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import AdminDashboard from './pages/AdminDashboard';
 
 import BellIcon from './assets/icons/bell.svg';
 import DashboardIcon from './assets/icons/dashboard.svg';
@@ -54,42 +56,35 @@ function AppContent() {
   }
 
   return (
-    <div className="flex h-screen" style={{ backgroundColor: '#f9fafb' }}>
-      <aside className="w-52 flex flex-col" style={{ backgroundColor: 'white' }}>
+    <div className="flex h-screen bg-gray-50">
+      <aside className="w-52 flex flex-col bg-white">
         <div className="p-6 flex items-center gap-2">
           <img src="/synapse_logo.png" alt="Synapse Logo" className="h-10" />
         </div>
 
         <nav className="px-4 space-y-1 flex-1">
-          <NavItem to="/" icon={DashboardIcon} text="Dashboard" />
-          <NavItem to="/find-tutors" icon={PersonSearchIcon} text="Find Tutors" />
-          <NavItem to="/bookings" icon={BookOnlineIcon} text={user?.isTutor ? 'My Sessions' : 'My Bookings'} />
-          <NavItem to="/history" icon={HistoryIcon} text="History" />
-          <NavItem to="/subjects" icon={MenuBookIcon} text="Subjects" />
-          <NavItem to="/settings" icon={SettingsIcon} text="Settings" />
+          {user?.isAdmin ? (
+            <NavItem to="/admin" icon={DashboardIcon} text="Admin Panel" />
+          ) : (
+            <>
+              <NavItem to="/" icon={DashboardIcon} text="Dashboard" />
+              <NavItem to="/find-tutors" icon={PersonSearchIcon} text="Find Tutors" />
+              <NavItem to="/bookings" icon={BookOnlineIcon} text={user?.isTutor ? 'Requests' : 'My Bookings'} />
+              <NavItem to="/history" icon={HistoryIcon} text="History" />
+            </>
+          )}
         </nav>
-
-        <div className="px-4 pb-4">
-          <button
-            onClick={logout}
-            className="w-full px-4 py-3 flex items-center gap-3 rounded-lg cursor-pointer transition-colors hover:bg-gray-50 text-red-600"
-          >
-            <img src={LogoutIcon} alt="logout" className="w-5 h-5" style={{ filter: 'invert(27%) sepia(85%) saturate(3015%) hue-rotate(345deg) brightness(85%) contrast(106%)' }} />
-            <span className="text-sm">Logout</span>
-          </button>
-        </div>
       </aside>
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-16 flex items-center justify-between px-6 border-b" style={{ backgroundColor: 'white', borderColor: '#e5e7eb' }}>
-          <div className="flex-1 flex items-center justify-center px-6" style={{ maxWidth: '560px' }}>
+        <header className="h-16 flex items-center justify-between px-6 border-b bg-white border-gray-200">
+          <div className="flex-1 flex items-center justify-center px-6 max-w-[560px]">
             <div className="w-full relative">
-              <img src={SearchIcon} alt="search" className="absolute left-3 w-5 h-5 opacity-40" style={{ top: '50%', transform: 'translateY(-50%)' }} />
+              <img src={SearchIcon} alt="search" className="absolute left-3 w-5 h-5 opacity-40 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 placeholder="Search"
-                className="w-full rounded-lg px-9 py-2 outline-none text-sm border"
-                style={{ color: '#374151', borderColor: '#e5e7eb' }}
+                className="w-full rounded-lg px-9 py-2 outline-none text-sm border text-gray-700 border-gray-200"
               />
             </div>
           </div>
@@ -99,31 +94,50 @@ function AppContent() {
               <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
               <img src={BellIcon} alt="notifications" className="w-6 h-6" />
             </button>
-            <Link to="/settings" className="flex items-center gap-2.5 cursor-pointer hover:opacity-80 transition-opacity">
-              <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-300">
-                {user?.profilePhoto ? (
-                  <img src={user.profilePhoto} alt={user.name} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-white font-semibold">
-                    {user?.name?.charAt(0)}
-                  </div>
-                )}
+
+            <div className="relative group">
+              <button className="flex items-center gap-2.5 cursor-pointer hover:opacity-80 transition-opacity focus:outline-none">
+                <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-300">
+                  {user?.profilePhoto ? (
+                    <img src={user.profilePhoto} alt={user.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-white font-semibold transform bg-blue-500">
+                      {user?.name?.charAt(0)}
+                    </div>
+                  )}
+                </div>
+                <span className="text-gray-900 text-sm font-medium">{user?.name}</span>
+                <span className="text-gray-500 text-[10px]">▼</span>
+              </button>
+
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 ring-1 ring-black ring-opacity-5">
+                <Link to="/settings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                  Profile Settings
+                </Link>
+                <div className="border-t border-gray-100"></div>
+                <button
+                  onClick={logout}
+                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center gap-2"
+                >
+                  <img src={LogoutIcon} alt="logout" className="w-4 h-4" />
+                  Logout
+                </button>
               </div>
-              <span className="text-gray-900 text-sm font-medium">{user?.name}</span>
-              <span className="text-gray-500" style={{ fontSize: '10px' }}>▼</span>
-            </Link>
+            </div>
           </div>
         </header>
 
         <main className="flex-1 overflow-y-auto">
           <Routes>
-            <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/" element={user?.isAdmin ? <Navigate to="/admin" /> : <ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/find-tutors" element={<ProtectedRoute><FindTutors /></ProtectedRoute>} />
             <Route path="/tutor/:id" element={<ProtectedRoute><TutorProfile /></ProtectedRoute>} />
             <Route path="/subjects" element={<ProtectedRoute><SubjectBrowse /></ProtectedRoute>} />
             <Route path="/booking/:id" element={<ProtectedRoute><BookingForm /></ProtectedRoute>} />
             <Route path="/bookings" element={<ProtectedRoute><MyBookings /></ProtectedRoute>} />
+            <Route path="/session/:id" element={<ProtectedRoute><SessionDetails /></ProtectedRoute>} />
             <Route path="/history" element={<ProtectedRoute><SessionHistory /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
           </Routes>
         </main>
@@ -149,19 +163,14 @@ function NavItem({ to, icon, text }) {
   return (
     <Link
       to={to}
-      className="px-4 py-3 flex items-center gap-3 rounded-lg cursor-pointer transition-colors hover:bg-gray-50"
-      style={{
-        backgroundColor: isActive ? '#1e40af' : 'transparent',
-        color: isActive ? 'white' : '#6b7280'
-      }}
+      className={`px-4 py-3 flex items-center gap-3 rounded-lg cursor-pointer transition-colors ${isActive ? 'bg-blue-800 text-white hover:bg-blue-900' : 'text-gray-500 hover:bg-gray-50'
+        }`}
     >
       <img
         src={icon}
         alt={text}
-        className="w-5 h-5 transition-all"
-        style={{
-          filter: isActive ? 'invert(100%) brightness(200%)' : 'grayscale(100%) opacity(0.6)',
-        }}
+        className={`w-5 h-5 transition-all ${isActive ? 'invert brightness-200' : 'grayscale opacity-60'
+          }`}
       />
       <span className="text-sm">{text}</span>
     </Link>

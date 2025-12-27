@@ -7,7 +7,8 @@ Year: Year 2
 Course: Diploma in Information Technology
 
 1. Standard Student (No Tutor Interest)
-   Email: student1@student.tp.edu.sg
+   Admission No: 2400001A
+   Email: 2400001A@student.tp.edu.sg
    Name: Alice Tan
    Role: Student Only
    Tutor Mode: Off
@@ -16,7 +17,8 @@ Course: Diploma in Information Technology
    - Clean slate, no notifications customized.
 
 2. Aspiring Tutor (Registered as Tutor)
-   Email: tutor1@student.tp.edu.sg
+   Admission No: 2404532B
+   Email: 2404532B@student.tp.edu.sg
    Name: Bob Lim
    Role: Tutor
    Subjects:
@@ -28,7 +30,8 @@ Course: Diploma in Information Technology
    - Has availability set.
 
 3. Mixed User (Tutor who also books)
-   Email: mixed1@student.tp.edu.sg
+   Admission No: 2404533C
+   Email: 2404533C@student.tp.edu.sg
    Name: Charlie Chan
    Role: Tutor
    Subjects:
@@ -40,7 +43,8 @@ Course: Diploma in Information Technology
    - Has hosted 5 sessions as a tutor.
 
 4. "Bad" Tutor (Low Ratings)
-   Email: tutor_bad@student.tp.edu.sg
+   Admission No: 2404534D
+   Email: 2404534D@student.tp.edu.sg
    Name: David Teo
    Role: Tutor
    Subjects:
@@ -52,7 +56,8 @@ Course: Diploma in Information Technology
    - Late response time.
 
 5. High Achiever Student (Year 1)
-   Email: student_y1@student.tp.edu.sg
+   Admission No: 2404535E
+   Email: 2404535E@student.tp.edu.sg
    Name: Eve Koh
    Role: Student Only
    Year: Year 1
@@ -61,7 +66,8 @@ Course: Diploma in Information Technology
    - Heavy notification user (all enabled).
 
 6. Senior Tutor (Year 3)
-   Email: tutor_senior@student.tp.edu.sg
+   Admission No: 2404536F
+   Email: 2404536F@student.tp.edu.sg
    Name: Frank Ng
    Role: Tutor
    Year: Year 3
@@ -74,7 +80,8 @@ Course: Diploma in Information Technology
    - Badge: "Top Rated".
 
 7. Edge Case: Tutor with Minimum Subjects
-   Email: tutor_min@student.tp.edu.sg
+   Admission No: 2404537G
+   Email: 2404537G@student.tp.edu.sg
    Name: Grace Wong
    Role: Tutor
    Subjects:
@@ -86,7 +93,8 @@ Course: Diploma in Information Technology
    - No bio.
 
 8. Edge Case: Student with Profile Privacy
-   Email: private_student@student.tp.edu.sg
+   Admission No: 2400008H
+   Email: 2400008H@student.tp.edu.sg
    Name: Harry Lee
    Role: Student Only
    Attributes:
@@ -94,14 +102,16 @@ Course: Diploma in Information Technology
    - Show Email: Off.
 
 9. Notification Free User
-   Email: quiet@student.tp.edu.sg
+   Admission No: 2400009I
+   Email: 2400009I@student.tp.edu.sg
    Name: Irene Soh
    Role: Student Only
    Attributes:
    - All notifications disabled (Push & Email).
 
 10. The "Quitter" (Tutor who disabled Tutor Mode)
-    Email: ex_tutor@student.tp.edu.sg
+    Admission No: 2400010J
+    Email: 2400010J@student.tp.edu.sg
     Name: Jacky Tan
     Role: Tutor (Technically)
     Attributes:

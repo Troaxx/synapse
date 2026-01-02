@@ -18,21 +18,39 @@ const MSTeamsDialog = ({ isOpen, onClose, tutorName }) => {
               </svg>
             </button>
           </div>
-          
+
           <div className="space-y-4">
             <p className="text-gray-700">
-              To contact {tutorName || 'this tutor'}, please reach out via Microsoft Teams.
+              To contact {tutorName || 'this tutor'}, please use Microsoft Teams or Email.
             </p>
-            
+
+            {tutorEmail && (
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+                <p className="text-sm text-gray-500 mb-1">Email Address</p>
+                <div className="flex items-center justify-between bg-white border border-gray-300 rounded px-3 py-2">
+                  <span className="text-gray-900 select-all">{tutorEmail}</span>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(tutorEmail);
+                      alert('Email copied to clipboard!');
+                    }}
+                    className="text-blue-600 hover:text-blue-800 text-sm font-medium ml-2"
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-800 font-medium mb-2">How to contact:</p>
+              <p className="text-sm text-blue-800 font-medium mb-2">How to contact via Teams:</p>
               <ul className="text-sm text-blue-700 space-y-1 list-disc list-inside">
                 <li>Open Microsoft Teams</li>
                 <li>Search for the tutor by their name or email</li>
                 <li>Send them a message or start a chat</li>
               </ul>
             </div>
-            
+
             <div className="flex justify-end gap-3 pt-4">
               <button
                 onClick={onClose}

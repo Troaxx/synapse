@@ -108,12 +108,6 @@ const Login = () => {
               {loading ? 'Signing in...' : 'Sign in'}
             </button>
           </div>
-
-          <div className="text-center text-sm text-gray-600">
-            <p>Demo credentials:</p>
-            <p>Email: alex.tan@student.tp.edu.sg</p>
-            <p>Password: password123</p>
-          </div>
         </form>
       </div>
     </div>

@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import './App.css';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { sessionAPI, notificationAPI } from './services/api';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
@@ -17,6 +18,7 @@ import SubjectBrowse from './pages/SubjectBrowse';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import AdminDashboard from './pages/AdminDashboard';
+import LeaveReview from './pages/LeaveReview';
 
 import BellIcon from './assets/icons/bell.svg';
 import DashboardIcon from './assets/icons/dashboard.svg';
@@ -42,7 +44,65 @@ function AppContent() {
   const { user, logout } = useAuth();
   const location = useLocation();
 
+  // Notification State
+  const [notifications, setNotifications] = React.useState([]);
+  const [unreadCount, setUnreadCount] = React.useState(0);
+  const [showNotifications, setShowNotifications] = React.useState(false);
+  const [pendingCount, setPendingCount] = React.useState(0);
+
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/forgot-password' || location.pathname.startsWith('/reset-password');
+
+  React.useEffect(() => {
+    if (user && !isAuthPage) {
+      fetchNotifications();
+      fetchPendingCount();
+      // Optional: Poll every 30s
+      const interval = setInterval(() => {
+        fetchNotifications();
+        fetchPendingCount();
+      }, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [user, isAuthPage]);
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await notificationAPI.getNotifications();
+      setNotifications(res.data);
+      setUnreadCount(res.data.filter(n => !n.read).length);
+    } catch (error) {
+      console.error("Failed to fetch notifications", error);
+    }
+  };
+
+  const fetchPendingCount = async () => {
+    try {
+      const res = await sessionAPI.getUserSessions({});
+      // Count sessions where status is Pending
+      // If tutor, incoming requests. If student, outgoing. Badge is useful for both.
+      const count = res.data.filter(s => s.status === 'Pending').length;
+      setPendingCount(count);
+    } catch (error) {
+      console.error("Failed to fetch pending count", error);
+    }
+  };
+
+  const handleMarkAsRead = async (id, link) => {
+    try {
+      await notificationAPI.markAsRead(id);
+      fetchNotifications(); // Refresh
+      setShowNotifications(false);
+    } catch (error) {
+      console.error("Failed to mark read", error);
+    }
+  };
+
+  const toggleNotifications = () => {
+    setShowNotifications(!showNotifications);
+    if (!showNotifications) {
+      // Could mark all as read or just leave them until clicked
+    }
+  };
 
   if (isAuthPage) {
     return (
@@ -69,7 +129,7 @@ function AppContent() {
             <>
               <NavItem to="/" icon={DashboardIcon} text="Dashboard" />
               <NavItem to="/find-tutors" icon={PersonSearchIcon} text="Find Tutors" />
-              <NavItem to="/bookings" icon={BookOnlineIcon} text={user?.isTutor ? 'Requests' : 'My Bookings'} />
+              <NavItem to="/bookings" icon={BookOnlineIcon} text={user?.isTutor ? 'Requests' : 'My Bookings'} badge={pendingCount} />
               <NavItem to="/history" icon={HistoryIcon} text="History" />
             </>
           )}
@@ -90,10 +150,54 @@ function AppContent() {
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="p-2 text-gray-400 hover:text-gray-500 relative">
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
-              <img src={BellIcon} alt="notifications" className="w-6 h-6" />
-            </button>
+            <div className="relative">
+              <button
+                onClick={toggleNotifications}
+                className="p-2 text-gray-400 hover:text-gray-500 relative focus:outline-none"
+              >
+                {unreadCount > 0 && (
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
+                )}
+                <img src={BellIcon} alt="notifications" className="w-6 h-6" />
+              </button>
+
+              {/* Notification Dropdown */}
+              {showNotifications && (
+                <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl py-2 z-50 ring-1 ring-black ring-opacity-5 max-h-96 overflow-y-auto">
+                  <div className="px-4 py-2 border-b border-gray-100 flex justify-between items-center">
+                    <h3 className="font-semibold text-gray-900">Notifications</h3>
+                    <button onClick={fetchNotifications} className="text-xs text-blue-600 hover:text-blue-800">Refresh</button>
+                  </div>
+                  {notifications.length === 0 ? (
+                    <div className="px-4 py-8 text-center text-gray-500 text-sm">
+                      No notifications
+                    </div>
+                  ) : (
+                    <div>
+                      {notifications.map(notification => (
+                        <div
+                          key={notification._id}
+                          className={`px-4 py-3 hover:bg-gray-50 border-b border-gray-50 last:border-b-0 cursor-pointer ${!notification.read ? 'bg-blue-50' : ''}`}
+                          onClick={() => handleMarkAsRead(notification._id)}
+                        >
+                          <div className="flex justify-between items-start">
+                            <p className={`text-sm ${!notification.read ? 'font-semibold text-gray-900' : 'text-gray-700'}`}>
+                              {notification.title}
+                            </p>
+                            <span className="text-xs text-gray-400 whitespace-nowrap ml-2">
+                              {new Date(notification.createdAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                            {notification.message}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             <div className="relative group">
               <button className="flex items-center gap-2.5 cursor-pointer hover:opacity-80 transition-opacity focus:outline-none">
@@ -137,6 +241,7 @@ function AppContent() {
             <Route path="/bookings" element={<ProtectedRoute><MyBookings /></ProtectedRoute>} />
             <Route path="/session/:id" element={<ProtectedRoute><SessionDetails /></ProtectedRoute>} />
             <Route path="/history" element={<ProtectedRoute><SessionHistory /></ProtectedRoute>} />
+            <Route path="/review/:sessionId" element={<ProtectedRoute><LeaveReview /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
           </Routes>
@@ -156,7 +261,7 @@ function App() {
   );
 }
 
-function NavItem({ to, icon, text }) {
+function NavItem({ to, icon, text, badge }) {
   const location = useLocation();
   const isActive = location.pathname === to;
 
@@ -173,6 +278,11 @@ function NavItem({ to, icon, text }) {
           }`}
       />
       <span className="text-sm">{text}</span>
+      {badge > 0 && (
+        <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+          {badge}
+        </span>
+      )}
     </Link>
   );
 }

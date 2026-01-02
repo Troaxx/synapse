@@ -28,21 +28,7 @@ const MyBookings = () => {
       setLoading(true);
       // Fetch ALL sessions for the user (no filters)
       const response = await sessionAPI.getUserSessions({});
-      let allData = response.data;
-
-      // Filter based on role (Tutor vs Student view)
-      const userId = user?._id || user?.id;
-      if (isTutor) {
-        allData = allData.filter(s =>
-          (s.tutor?._id === userId || s.tutor === userId || s.tutor?._id?.toString() === userId?.toString())
-        );
-      } else {
-        allData = allData.filter(s =>
-          (s.student?._id === userId || s.student === userId || s.student?._id?.toString() === userId?.toString())
-        );
-      }
-
-      setAllSessions(allData);
+      setAllSessions(response.data);
     } catch (error) {
       console.error('Error loading sessions:', error);
     } finally {
@@ -54,13 +40,11 @@ const MyBookings = () => {
     let filtered = [];
     if (activeTab === 'pending') {
       filtered = allSessions.filter(s => s.status === 'Pending');
-    } else if (activeTab === 'upcoming') {
+    } else if (activeTab === 'confirmed') {
       filtered = allSessions.filter(s => s.status === 'Confirmed');
-      // Note: Backend 'upcoming' logic also checked date, but 'Confirmed' is a good proxy for now or we can add date check
-      // For simplicity and matching previous backend logic closely:
       filtered = filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
     } else if (activeTab === 'past') {
-      filtered = allSessions.filter(s => s.status === 'Completed' || s.status === 'Cancelled'); // backend 'past' was mostly Completed
+      filtered = allSessions.filter(s => s.status === 'Completed' || s.status === 'Cancelled');
     }
     setDisplayedSessions(filtered);
   };
@@ -68,7 +52,7 @@ const MyBookings = () => {
   const handleAcceptRequest = async (sessionId) => {
     try {
       await sessionAPI.updateSessionStatus(sessionId, { status: 'Confirmed' });
-      await loadSessions();
+      loadSessions();
     } catch (error) {
       console.error('Error accepting request:', error);
       alert('Failed to accept request');
@@ -78,7 +62,7 @@ const MyBookings = () => {
   const handleRejectRequest = async (sessionId) => {
     try {
       await sessionAPI.updateSessionStatus(sessionId, { status: 'Cancelled' });
-      await loadSessions();
+      loadSessions();
     } catch (error) {
       console.error('Error rejecting request:', error);
       alert('Failed to reject request');
@@ -88,7 +72,7 @@ const MyBookings = () => {
   const handleCompleteSession = async (sessionId) => {
     try {
       await sessionAPI.updateSessionStatus(sessionId, { status: 'Completed' });
-      await loadSessions();
+      loadSessions();
     } catch (error) {
       console.error('Error completing session:', error);
       alert('Failed to complete session');
@@ -111,8 +95,7 @@ const MyBookings = () => {
   };
 
   const pendingCount = allSessions.filter(s => s.status === 'Pending').length;
-  // Upcoming roughly means Confirmed. Backend had date check, adding it back for accuracy if data has dates
-  const upcomingCount = allSessions.filter(s => s.status === 'Confirmed').length;
+  const confirmedCount = allSessions.filter(s => s.status === 'Confirmed').length;
   const pastCount = allSessions.filter(s => s.status === 'Completed' || s.status === 'Cancelled').length;
 
   if (loading) {
@@ -145,13 +128,13 @@ const MyBookings = () => {
                     Pending Requests ({pendingCount})
                   </button>
                   <button
-                    onClick={() => setActiveTab('upcoming')}
-                    className={`py-4 px-8 text-center border-b-2 font-medium text-sm ${activeTab === 'upcoming'
+                    onClick={() => setActiveTab('confirmed')}
+                    className={`py-4 px-8 text-center border-b-2 font-medium text-sm ${activeTab === 'confirmed'
                       ? 'border-blue-500 text-blue-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                       }`}
                   >
-                    Upcoming ({upcomingCount})
+                    Confirmed ({confirmedCount})
                   </button>
                   <button
                     onClick={() => setActiveTab('past')}
@@ -166,13 +149,13 @@ const MyBookings = () => {
               ) : (
                 <>
                   <button
-                    onClick={() => setActiveTab('upcoming')}
-                    className={`py-4 px-8 text-center border-b-2 font-medium text-sm ${activeTab === 'upcoming'
+                    onClick={() => setActiveTab('confirmed')}
+                    className={`py-4 px-8 text-center border-b-2 font-medium text-sm ${activeTab === 'confirmed'
                       ? 'border-blue-500 text-blue-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                       }`}
                   >
-                    Upcoming ({upcomingCount})
+                    Confirmed ({confirmedCount})
                   </button>
                   <button
                     onClick={() => setActiveTab('pending')}
@@ -201,8 +184,13 @@ const MyBookings = () => {
         {displayedSessions.length > 0 ? (
           <div className="space-y-4">
             {displayedSessions.map(session => {
-              const otherPerson = isTutor ? session.student : session.tutor;
+              const currentUserId = user?._id || user?.id;
+              // If I am the student, show the tutor. If I am the tutor, show the student.
+              // Note: session.student and session.tutor are populated objects
+              const isMeStudent = session.student._id === currentUserId || session.student === currentUserId;
+              const otherPerson = isMeStudent ? session.tutor : session.student;
               const displayName = otherPerson?.name || 'Unknown';
+              const displayRole = isMeStudent ? 'Tutor' : 'Student';
 
               return (
                 <div key={session._id} className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-6">
@@ -222,7 +210,8 @@ const MyBookings = () => {
                           <div>
                             <h3 className="text-xl font-bold text-gray-900">{session.subject}</h3>
                             <p className="text-gray-600">
-                              {isTutor ? 'with' : 'with'} {displayName}
+                              {/* Display appropriate role text */}
+                              {isMeStudent ? 'with Tutor' : 'with Student'} {displayName}
                             </p>
                           </div>
                           <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(session.status)}`}>
@@ -239,6 +228,12 @@ const MyBookings = () => {
                             </svg>
                             {session.duration} min
                           </div>
+                          <div className="flex items-center text-gray-600">
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            {new Date(session.date).toLocaleDateString()}
+                          </div>
                         </div>
                         {session.notes && (
                           <p className="text-sm text-gray-600 mt-2">Notes: {session.notes}</p>
@@ -247,7 +242,8 @@ const MyBookings = () => {
                     </div>
 
                     <div className="flex md:flex-col gap-2 md:w-48">
-                      {isTutor && activeTab === 'pending' && (
+                      {/* Accept/Reject only if I am the TUTOR receiving a request */}
+                      {!isMeStudent && activeTab === 'pending' && (
                         <>
                           <button
                             onClick={() => handleAcceptRequest(session._id)}
@@ -263,7 +259,9 @@ const MyBookings = () => {
                           </button>
                         </>
                       )}
-                      {isTutor && activeTab === 'upcoming' && session.status === 'Confirmed' && (
+
+                      {/* Mark Complete only if I am the TUTOR and session is Confirmed */}
+                      {!isMeStudent && activeTab === 'confirmed' && session.status === 'Confirmed' && (
                         <button
                           onClick={() => handleCompleteSession(session._id)}
                           className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
@@ -271,9 +269,10 @@ const MyBookings = () => {
                           Mark Complete
                         </button>
                       )}
-                      {!isTutor && (activeTab === 'upcoming' || activeTab === 'pending') && (
-                        <>
 
+                      {/* Cancel allowed if (I am Student AND (Pending OR Confirmed)) */}
+                      {isMeStudent && (activeTab === 'confirmed' || activeTab === 'pending') && (
+                        <>
                           <button
                             onClick={() => sessionAPI.cancelSession(session._id).then(() => loadSessions())}
                             className="flex-1 bg-red-100 text-red-700 py-2 px-4 rounded-lg hover:bg-red-200 transition-colors font-medium text-sm"
@@ -282,9 +281,11 @@ const MyBookings = () => {
                           </button>
                         </>
                       )}
-                      {!isTutor && activeTab === 'past' && !session.review && (
+
+                      {/* Review allowed if (I am Student AND Past AND Not Reviewed) */}
+                      {isMeStudent && activeTab === 'past' && !session.review && (
                         <button
-                          onClick={() => navigate(`/session/${session._id}`)}
+                          onClick={() => navigate(`/review/${session._id}`)}
                           className="flex-1 bg-yellow-100 text-yellow-800 py-2 px-4 rounded-lg hover:bg-yellow-200 transition-colors font-medium text-sm"
                         >
                           Leave Review

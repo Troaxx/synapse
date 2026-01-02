@@ -18,7 +18,7 @@ Course: Diploma in Information Technology
 
 2. Aspiring Tutor (Registered as Tutor)
    Admission No: 2404532B
-   Email: 2404532B@student.tp.edu.sg
+   Email: 
    Name: Bob Lim
    Role: Tutor
    Subjects:

@@ -1,5 +1,7 @@
 const Session = require('../models/Session');
 const User = require('../models/User');
+const Notification = require('../models/Notification');
+const Report = require('../models/Report');
 
 const generateSessionId = () => {
   return 'S' + Date.now().toString().slice(-4) + Math.random().toString(36).substr(2, 4).toUpperCase();
@@ -35,6 +37,14 @@ exports.createSession = async (req, res) => {
 
     await session.populate('student', 'name email');
     await session.populate('tutor', 'name email');
+
+    // Notification for Tutor
+    await Notification.create({
+      user: tutorId,
+      title: 'New Booking Request',
+      message: `${session.student.name} requested a session for ${subject}`,
+      type: 'info'
+    });
 
     res.status(201).json({
       message: 'Session booking created successfully',
@@ -72,7 +82,18 @@ exports.getUserSessions = async (req, res) => {
       .populate('tutor', 'name email profilePhoto tutorProfile.rating')
       .sort({ date: type === 'past' ? -1 : 1 });
 
-    res.json(sessions);
+    // Check for reports for each session
+    const sessionsWithReportStatus = await Promise.all(sessions.map(async (session) => {
+      const report = await Report.findOne({ session: session._id, reporter: req.user.userId });
+      const sessionObj = session.toObject();
+      if (report) {
+        sessionObj.reportStatus = report.status;
+        sessionObj.reported = true;
+      }
+      return sessionObj;
+    }));
+
+    res.json(sessionsWithReportStatus);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -103,12 +124,18 @@ exports.updateSessionStatus = async (req, res) => {
   try {
     const { status, sessionNotes } = req.body;
 
-    const session = await Session.findById(req.params.id);
+    const session = await Session.findById(req.params.id)
+      .populate('student', 'name')
+      .populate('tutor', 'name');
+
     if (!session) {
       return res.status(404).json({ message: 'Session not found' });
     }
 
-    if (session.tutor.toString() !== req.user.userId) {
+    // Allow student to cancel if pending or confirmed
+    if (status === 'Cancelled' && session.student._id.toString() === req.user.userId) {
+      // authorized
+    } else if (session.tutor._id.toString() !== req.user.userId) {
       return res.status(403).json({ message: 'Only the tutor can update session status' });
     }
 
@@ -118,10 +145,40 @@ exports.updateSessionStatus = async (req, res) => {
     }
 
     if (status === 'Completed') {
-      const tutor = await User.findById(session.tutor);
-      tutor.tutorProfile.totalSessions += 1;
-      tutor.tutorProfile.hoursTaught += session.duration / 60;
-      await tutor.save();
+      const tutor = await User.findById(session.tutor._id); // Access _id because populated
+      if (tutor) {
+        tutor.tutorProfile.totalSessions += 1;
+        tutor.tutorProfile.hoursTaught += session.duration / 60;
+        await tutor.save();
+      }
+
+      // Notify Student
+      await Notification.create({
+        user: session.student._id,
+        title: 'Session Completed',
+        message: `${session.subject} session marked as completed.`,
+        type: 'success'
+      });
+    } else if (status === 'Confirmed') {
+      // Notify Student
+      await Notification.create({
+        user: session.student._id,
+        title: 'Request Accepted',
+        message: `Your session for ${session.subject} has been accepted.`,
+        type: 'success'
+      });
+    } else if (status === 'Cancelled') {
+      // Notify the OTHER party
+      const notifyUserId = session.student._id.toString() === req.user.userId
+        ? session.tutor._id
+        : session.student._id;
+
+      await Notification.create({
+        user: notifyUserId,
+        title: 'Session Cancelled',
+        message: `Your session for ${session.subject} has been cancelled.`,
+        type: 'warning'
+      });
     }
 
     await session.save();
@@ -191,18 +248,33 @@ exports.addReview = async (req, res) => {
 
 exports.cancelSession = async (req, res) => {
   try {
-    const session = await Session.findById(req.params.id);
+    const session = await Session.findById(req.params.id)
+      .populate('student', 'name')
+      .populate('tutor', 'name');
+
     if (!session) {
       return res.status(404).json({ message: 'Session not found' });
     }
 
-    if (session.student.toString() !== req.user.userId &&
-      session.tutor.toString() !== req.user.userId) {
+    if (session.student._id.toString() !== req.user.userId &&
+      session.tutor._id.toString() !== req.user.userId) {
       return res.status(403).json({ message: 'Access denied' });
     }
 
     session.status = 'Cancelled';
     await session.save();
+
+    // Notify the OTHER party
+    const notifyUserId = session.student._id.toString() === req.user.userId
+      ? session.tutor._id
+      : session.student._id;
+
+    await Notification.create({
+      user: notifyUserId,
+      title: 'Session Cancelled',
+      message: `Your session for ${session.subject} has been cancelled.`,
+      type: 'warning'
+    });
 
     res.json({ message: 'Session cancelled successfully', session });
   } catch (error) {

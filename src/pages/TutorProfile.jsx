@@ -50,7 +50,7 @@ const TutorProfile = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <button 
+        <button
           onClick={() => navigate('/find-tutors')}
           className="flex items-center text-blue-600 hover:text-blue-700 mb-6"
         >
@@ -117,7 +117,7 @@ const TutorProfile = () => {
               )}
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
+            {/* <div className="bg-white rounded-lg shadow p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-4">Response Rate/Statistics</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="text-center p-4 bg-purple-50 rounded-lg">
@@ -129,46 +129,8 @@ const TutorProfile = () => {
                   <p className="text-sm text-gray-600 mt-1">Reply Time</p>
                 </div>
               </div>
-            </div>
+            </div> */}
 
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Recent Reviews</h2>
-              {reviews.length > 0 ? (
-                <>
-                  <div className="space-y-4">
-                    {displayedReviews.map(review => (
-                      <div key={review._id || review.id} className="border-b border-gray-200 pb-4 last:border-b-0">
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <h3 className="font-semibold text-gray-900">{review.student?.name || 'Anonymous'}</h3>
-                            <div className="flex items-center mt-1">
-                              <span className="text-yellow-500">{"★".repeat(review.review?.rating || 0)}</span>
-                              <span className="ml-2 text-sm text-gray-500">
-                                {review.review?.reviewedAt ? new Date(review.review.reviewedAt).toLocaleDateString() : 'N/A'}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <p className="text-gray-700">{review.review?.comment || 'No comment'}</p>
-                      </div>
-                    ))}
-                  </div>
-                  {!showAllReviews && reviews.length > 3 && (
-                    <button 
-                      onClick={() => setShowAllReviews(true)}
-                      className="w-full mt-4 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 rounded-lg transition-colors font-medium"
-                    >
-                      Load More Reviews
-                    </button>
-                  )}
-                </>
-              ) : (
-                <p className="text-gray-500">No reviews yet</p>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-6">
             <div className="bg-white rounded-lg shadow p-6 sticky top-4">
               <h2 className="text-xl font-bold text-gray-900 mb-4">Availability</h2>
               {tutor.tutorProfile?.availability && tutor.tutorProfile.availability.length > 0 ? (
@@ -191,17 +153,17 @@ const TutorProfile = () => {
               )}
 
               <div className="mt-6 space-y-3">
-                <button 
+                <button
                   onClick={() => navigate(`/booking/${tutor._id || tutor.id}`)}
                   className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
                 >
                   Book Session
                 </button>
-                <button 
+                <button
                   onClick={() => setShowMSTeamsDialog(true)}
                   className="w-full bg-gray-200 text-gray-800 py-3 rounded-lg hover:bg-gray-300 transition-colors font-semibold"
                 >
-                  Message Tutor
+                  Contact Tutor
                 </button>
               </div>
             </div>
@@ -209,10 +171,11 @@ const TutorProfile = () => {
         </div>
       </div>
 
-      <MSTeamsDialog 
+      <MSTeamsDialog
         isOpen={showMSTeamsDialog}
         onClose={() => setShowMSTeamsDialog(false)}
         tutorName={tutor?.name}
+        tutorEmail={tutor?.email}
       />
     </div>
   );

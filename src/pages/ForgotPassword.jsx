@@ -15,11 +15,6 @@ const ForgotPassword = () => {
         setLoading(true);
 
         try {
-            // Assuming API is running on port 5000 based on standard MERN setup, or proxy is set up.
-            // Based on previous contexts, frontend uses axios possibly with base URL.
-            // I'll assume direct call to http://localhost:5000/api/auth/forgot-password or relative if proxy works.
-            // Let's use relative for now if proxy exists, or full path.
-            // Checking package.json, typically backend is 5000.
             await axios.post('http://localhost:5000/api/auth/forgot-password', { email });
             setMessage('Check your email inbox (or server console) for the reset link.');
         } catch (err) {

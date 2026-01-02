@@ -1,4 +1,5 @@
 const Report = require('../models/Report');
+const Notification = require('../models/Notification');
 
 exports.createReport = async (req, res) => {
     try {
@@ -13,6 +14,14 @@ exports.createReport = async (req, res) => {
         });
 
         await report.save();
+
+        // Notify Reporter
+        await Notification.create({
+            user: req.user.userId,
+            title: 'Report Submitted',
+            message: 'Your report has been submitted and is under review.',
+            type: 'info'
+        });
 
         res.status(201).json({ message: 'Report submitted successfully', report });
     } catch (error) {

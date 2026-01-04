@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { sessionAPI } from '../services/api';
+import UserProfileCard from '../components/UserProfileCard';
 
 const MyBookings = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
-  const initialTab = searchParams.get('tab') || 'upcoming';
+  const initialTab = searchParams.get('tab') || 'confirmed';
   const [activeTab, setActiveTab] = useState(initialTab);
   const [allSessions, setAllSessions] = useState([]);
   const [displayedSessions, setDisplayedSessions] = useState([]);
@@ -195,50 +196,37 @@ const MyBookings = () => {
               return (
                 <div key={session._id} className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-6">
                   <div className="flex flex-col md:flex-row gap-6">
-                    <div className="flex items-start gap-4 flex-1">
-                      <div className="w-16 h-16 bg-gray-300 rounded-full flex-shrink-0 overflow-hidden">
-                        {otherPerson?.profilePhoto ? (
-                          <img src={otherPerson.profilePhoto} alt={displayName} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-white font-semibold bg-gray-400">
-                            {displayName.charAt(0)}
-                          </div>
-                        )}
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between mb-4">
+                        <h3 className="text-xl font-bold text-gray-900">{session.subject}</h3>
+                        <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(session.status)}`}>
+                          {session.status}
+                        </span>
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <h3 className="text-xl font-bold text-gray-900">{session.subject}</h3>
-                            <p className="text-gray-600">
-                              {/* Display appropriate role text */}
-                              {isMeStudent ? 'with Tutor' : 'with Student'} {displayName}
-                            </p>
-                          </div>
-                          <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(session.status)}`}>
-                            {session.status}
-                          </span>
-                        </div>
-                        {session.topic && (
-                          <p className="text-gray-700 mb-3">Topic: {session.topic}</p>
-                        )}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-                          <div className="flex items-center text-gray-600">
-                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            {session.duration} min
-                          </div>
-                          <div className="flex items-center text-gray-600">
-                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            {new Date(session.date).toLocaleDateString()}
-                          </div>
-                        </div>
-                        {session.notes && (
-                          <p className="text-sm text-gray-600 mt-2">Notes: {session.notes}</p>
-                        )}
+
+                      <div className="mb-4">
+                        <UserProfileCard
+                          user={otherPerson}
+                          role={displayRole}
+                          isClickable={isMeStudent} // Clickable if looking at a Tutor
+                          targetUrl={`/tutor/${otherPerson?._id}`}
+                        />
                       </div>
+
+                      {session.topic && (
+                        <p className="text-gray-700 mb-3">Topic: {session.topic}</p>
+                      )}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                        <div className="flex items-center text-gray-600">
+                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          {session.duration} min
+                        </div>
+                      </div>
+                      {session.notes && (
+                        <p className="text-sm text-gray-600 mt-2">Notes: {session.notes}</p>
+                      )}
                     </div>
 
                     <div className="flex md:flex-col gap-2 md:w-48">

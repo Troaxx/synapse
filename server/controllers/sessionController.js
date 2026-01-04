@@ -71,8 +71,8 @@ exports.getUserSessions = async (req, res) => {
     }
 
     if (type === 'upcoming') {
-      query.date = { $gte: new Date() };
-      query.status = { $in: ['Pending', 'Confirmed'] };
+      // User requested to remove time filter and fetch all confirmed
+      query.status = 'Confirmed';
     } else if (type === 'past') {
       query.status = 'Completed';
     }

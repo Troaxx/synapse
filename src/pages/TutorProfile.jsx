@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { tutorAPI } from '../services/api';
-import MSTeamsDialog from '../components/MSTeamsDialog';
+import ContactTutorButton from '../components/ContactTutorButton';
 
 const TutorProfile = () => {
   const navigate = useNavigate();
@@ -10,7 +10,6 @@ const TutorProfile = () => {
   const [tutor, setTutor] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showMSTeamsDialog, setShowMSTeamsDialog] = useState(false);
 
   useEffect(() => {
     loadTutorData();
@@ -19,7 +18,7 @@ const TutorProfile = () => {
   const loadTutorData = async () => {
     try {
       setLoading(true);
-      const response = await tutorAPI.getTutorById(id);
+      const response = await tutorAPI.getTutorById(id); // This object contains { name: "...", email: "...", ... }
       setTutor(response.data.tutor);
       setReviews(response.data.reviews || []);
     } catch (error) {
@@ -117,66 +116,20 @@ const TutorProfile = () => {
               )}
             </div>
 
-            {/* <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Response Rate/Statistics</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="text-center p-4 bg-purple-50 rounded-lg">
-                  <p className="text-3xl font-bold text-purple-600">{tutor.tutorProfile?.responseRate || 0}%</p>
-                  <p className="text-sm text-gray-600 mt-1">Response Rate</p>
-                </div>
-                <div className="text-center p-4 bg-orange-50 rounded-lg">
-                  <p className="text-xl font-bold text-orange-600">{tutor.tutorProfile?.replyTime || '< 24 hours'}</p>
-                  <p className="text-sm text-gray-600 mt-1">Reply Time</p>
-                </div>
-              </div>
-            </div> */}
-
             <div className="bg-white rounded-lg shadow p-6 sticky top-4">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Availability</h2>
-              {tutor.tutorProfile?.availability && tutor.tutorProfile.availability.length > 0 ? (
-                <div className="space-y-3">
-                  {tutor.tutorProfile.availability.map((day, index) => (
-                    <div key={index} className="border-b border-gray-200 pb-3 last:border-b-0">
-                      <h3 className="font-semibold text-gray-900 mb-2">{day.day}</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {day.slots?.map((slot, slotIndex) => (
-                          <span key={slotIndex} className="px-3 py-1 bg-green-100 text-green-700 rounded text-sm">
-                            {slot}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500">Availability not set</p>
-              )}
-
-              <div className="mt-6 space-y-3">
+              <div className="space-y-3">
                 <button
                   onClick={() => navigate(`/booking/${tutor._id || tutor.id}`)}
                   className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
                 >
                   Book Session
                 </button>
-                <button
-                  onClick={() => setShowMSTeamsDialog(true)}
-                  className="w-full bg-gray-200 text-gray-800 py-3 rounded-lg hover:bg-gray-300 transition-colors font-semibold"
-                >
-                  Contact Tutor
-                </button>
+                <ContactTutorButton tutor={tutor} />
               </div>
             </div>
           </div>
         </div>
       </div>
-
-      <MSTeamsDialog
-        isOpen={showMSTeamsDialog}
-        onClose={() => setShowMSTeamsDialog(false)}
-        tutorName={tutor?.name}
-        tutorEmail={tutor?.email}
-      />
     </div>
   );
 };

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { sessionAPI, reportAPI } from '../services/api';
+import UserProfileCard from '../components/UserProfileCard';
 
 const SessionHistory = () => {
   const navigate = useNavigate();
@@ -44,7 +45,6 @@ const SessionHistory = () => {
           tutorImage: isTutor ? session.student?.profilePhoto : session.tutor?.profilePhoto,
           subject: session.subject,
           topic: session.topic,
-          date: new Date(session.date).toLocaleDateString(),
           time: session.time,
           duration: `${session.duration} min`,
           location: session.location,
@@ -178,41 +178,39 @@ const SessionHistory = () => {
               <div key={session.id} className="bg-white rounded-lg shadow p-6">
                 <div className="flex flex-col lg:flex-row gap-6">
                   <div className="flex-1">
-                    <div className="flex items-start gap-4 mb-4">
-                      <div className="w-16 h-16 bg-gray-300 rounded-full flex-shrink-0"></div>
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <h3 className="text-xl font-bold text-gray-900">{session.subject}</h3>
-                            <p className="text-gray-600">
-                              {user?.isTutor
-                                ? `You tutored ${session.tutor}`
-                                : `Tutored by ${session.tutor}`}
-                            </p>
-                          </div>
-                          <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-semibold">
-                            {session.status}
-                          </span>
-                        </div>
-                        <p className="text-gray-700 mb-3">Topic: {session.topic}</p>
-                        <div className="flex items-center text-gray-600 text-sm">
-                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          {session.duration}
-                        </div>
-                      </div>
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="text-xl font-bold text-gray-900">{session.subject}</h3>
+                      <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-semibold">
+                        {session.status}
+                      </span>
+                    </div>
+
+                    <div className="mb-4">
+                      <UserProfileCard
+                        user={{ name: session.tutor, profilePhoto: session.tutorImage }}
+                        subtext={user.isTutor ? 'Student' : 'Tutor'}
+                        isClickable={!user.isTutor}
+                        targetUrl={`/tutor/${session.tutorId}`}
+                      />
+                    </div>
+
+                    <p className="text-gray-700 mb-3">Topic: {session.topic}</p>
+                    <div className="flex items-center text-gray-600 text-sm">
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      {session.duration}
                     </div>
 
                     {session.notes && (
-                      <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                      <div className="bg-gray-50 rounded-lg p-4 mb-4 mt-4">
                         <h4 className="font-semibold text-gray-900 mb-2">Session Notes</h4>
                         <p className="text-gray-700 text-sm">{session.notes}</p>
                       </div>
                     )}
 
                     {session.reviewed && (
-                      <div className="bg-blue-50 rounded-lg p-4">
+                      <div className="bg-blue-50 rounded-lg p-4 mt-4">
                         <div className="flex items-center justify-between mb-2">
                           <h4 className="font-semibold text-gray-900">
                             {user.isTutor ? `${session.tutor}'s Review` : 'Your Review'}
@@ -399,4 +397,3 @@ const SessionHistory = () => {
 };
 
 export default SessionHistory;
-

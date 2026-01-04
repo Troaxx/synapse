@@ -58,7 +58,7 @@ mongoose.connect(process.env.MONGODB_URI, {
 const authRoutes = require('./routes/authRoutes');
 const tutorRoutes = require('./routes/tutorRoutes');
 const sessionRoutes = require('./routes/sessionRoutes');
-const messageRoutes = require('./routes/messageRoutes');
+// const messageRoutes = require('./routes/messageRoutes');
 const moduleRoutes = require('./routes/moduleRoutes');
 const recommendationRoutes = require('./routes/recommendationRoutes');
 const reportRoutes = require('./routes/reportRoutes');
@@ -68,7 +68,7 @@ const notificationRoutes = require('./routes/notificationRoutes');
 app.use('/api/auth', authRoutes);
 app.use('/api/tutors', tutorRoutes);
 app.use('/api/sessions', sessionRoutes);
-app.use('/api/messages', messageRoutes);
+// app.use('/api/messages', messageRoutes);
 app.use('/api/modules', moduleRoutes);
 app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/reports', reportRoutes);

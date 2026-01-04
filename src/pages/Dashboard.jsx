@@ -2,13 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import AIRecommendations from '../components/AIRecommendations';
-import TutorDashboard from './TutorDashboard';
 import { sessionAPI } from '../services/api';
+import UserProfileCard from '../components/UserProfileCard';
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [viewMode, setViewMode] = useState('student');
   const [sessionsCompleted, setSessionsCompleted] = useState(0);
   const [upcomingSessions, setUpcomingSessions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,17 +17,7 @@ const Dashboard = () => {
   }
 
   const isTutor = user.isTutor;
-  const canBeTutor = isTutor;
-
-  useEffect(() => {
-    if (!canBeTutor) {
-      setViewMode('student');
-    }
-  }, [canBeTutor]);
-
-
-
-  const studentName = user?.name?.split(' ')[0] || "Student";
+  const displayName = user?.name?.split(' ')[0] || "User";
 
   useEffect(() => {
     loadDashboardData();
@@ -46,9 +35,11 @@ const Dashboard = () => {
       const completedSessions = sessionsResponse.data.filter(s => s.status === 'Completed');
       setSessionsCompleted(completedSessions.length);
 
+      // Filter upcoming sessions logic
       setUpcomingSessions(upcomingResponse.data.slice(0, 2).map(session => ({
         id: session._id,
-        tutor: session.tutor?.name || 'Unknown',
+        // Store full object for UserProfileCard
+        otherPerson: isTutor ? session.student : session.tutor,
         subject: session.subject,
         date: new Date(session.date).toLocaleDateString(),
         time: session.time,
@@ -66,8 +57,8 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8 flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Hello {studentName}</h1>
-            <p className="text-gray-600 mt-1">Welcome back to your learning dashboard</p>
+            <h1 className="text-3xl font-bold text-gray-900">Hello {displayName}</h1>
+            <p className="text-gray-600 mt-1">Welcome back to your {isTutor ? 'tutoring' : 'learning'} dashboard</p>
           </div>
 
         </div>
@@ -93,8 +84,19 @@ const Dashboard = () => {
             ) : upcomingSessions.length > 0 ? (
               upcomingSessions.map(session => (
                 <div key={session.id} className="border border-gray-200 rounded-lg p-4">
-                  <h3 className="font-semibold text-gray-900">{session.subject}</h3>
-                  <p className="text-sm text-gray-600 mt-1">with {session.tutor}</p>
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-semibold text-gray-900">{session.subject}</h3>
+                  </div>
+
+                  <div className="mb-3">
+                    <UserProfileCard
+                      user={session.otherPerson}
+                      role={isTutor ? 'Student' : 'Tutor'}
+                      isClickable={!isTutor}
+                      targetUrl={`/tutor/${session.otherPerson?._id}`}
+                    />
+                  </div>
+
                   <div className="mt-3 space-y-1">
                     <p className="text-sm text-gray-700">{session.date} at {session.time}</p>
                     <p className="text-sm text-gray-500">{session.location}</p>
@@ -104,20 +106,24 @@ const Dashboard = () => {
             ) : (
               <div className="col-span-2 flex flex-col items-center justify-center py-8">
                 <p className="text-gray-500 mb-4">No upcoming sessions</p>
-                <button
-                  onClick={() => navigate('/find-tutors')}
-                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
-                >
-                  Find a Tutor
-                </button>
+                {!isTutor && (
+                  <button
+                    onClick={() => navigate('/find-tutors')}
+                    className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                  >
+                    Find a Tutor
+                  </button>
+                )}
               </div>
             )}
           </div>
         </div>
 
-        <div className="mb-6">
-          <AIRecommendations />
-        </div>
+        {!isTutor && (
+          <div className="mb-6">
+            <AIRecommendations />
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
@@ -131,4 +137,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-

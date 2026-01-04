@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { sessionAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import UserProfileCard from '../components/UserProfileCard';
 
 const SessionDetails = () => {
     const { id } = useParams();
@@ -88,22 +89,12 @@ const SessionDetails = () => {
 
                     <div className="p-6 space-y-8">
                         {/* Person Info */}
-                        <div className="flex items-center gap-4">
-                            <div className="w-16 h-16 bg-gray-300 rounded-full overflow-hidden">
-                                {otherPerson?.profilePhoto ? (
-                                    <img src={otherPerson.profilePhoto} alt={displayName} className="w-full h-full object-cover" />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-white font-semibold bg-gray-400">
-                                        {displayName.charAt(0)}
-                                    </div>
-                                )}
-                            </div>
-                            <div>
-                                <h3 className="text-lg font-semibold text-gray-900">{isTutor ? 'Student' : 'Tutor'}</h3>
-                                <p className="text-gray-600">{displayName}</p>
-                                {otherPerson?.email && <p className="text-sm text-gray-500">{otherPerson.email}</p>}
-                            </div>
-                        </div>
+                        <UserProfileCard
+                            user={otherPerson}
+                            role={isTutor ? 'Student' : 'Tutor'}
+                            isClickable={!isTutor}
+                            targetUrl={`/tutor/${otherPerson?._id || otherPerson?.id}`}
+                        />
 
                         {/* Session Info */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

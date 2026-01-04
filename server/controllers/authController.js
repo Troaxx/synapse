@@ -121,21 +121,31 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    console.log('[Login] Attempting login for:', email);
+
     const user = await User.findOne({ email });
     if (!user) {
+      console.log('[Login] User not found:', email);
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
+    console.log('[Login] User found:', user.email, '| isAdmin:', user.isAdmin);
+
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
+      console.log('[Login] Password mismatch for:', email);
       return res.status(401).json({ message: 'Invalid credentials' });
     }
+
+    console.log('[Login] Password valid, generating token...');
 
     const token = jwt.sign(
       { userId: user._id, email: user.email },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
+
+    console.log('[Login] Success for:', email);
 
     res.json({
       message: 'Login successful',
@@ -151,10 +161,12 @@ exports.login = async (req, res) => {
         admissionNumber: user.admissionNumber,
         bio: user.bio,
         profilePhoto: user.profilePhoto,
-        isTutor: user.isTutor
+        isTutor: user.isTutor,
+        isAdmin: user.isAdmin
       }
     });
   } catch (error) {
+    console.error('[Login] Error:', error.message);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };

@@ -36,15 +36,24 @@ const Dashboard = () => {
       setSessionsCompleted(completedSessions.length);
 
       // Filter upcoming sessions logic
-      setUpcomingSessions(upcomingResponse.data.slice(0, 2).map(session => ({
-        id: session._id,
-        // Store full object for UserProfileCard
-        otherPerson: isTutor ? session.student : session.tutor,
-        subject: session.subject,
-        date: new Date(session.date).toLocaleDateString(),
-        time: session.time,
-        location: session.location
-      })));
+      const currentUserId = user?._id || user?.id;
+      setUpcomingSessions(upcomingResponse.data.slice(0, 2).map(session => {
+        // Determine if current user is the student in this session
+        const studentId = session.student?._id || session.student;
+        const isMeStudent = studentId === currentUserId;
+        // Show tutor if I'm the student, show student if I'm the tutor
+        const otherPerson = isMeStudent ? session.tutor : session.student;
+
+        return {
+          id: session._id,
+          otherPerson,
+          isMeStudent,
+          subject: session.subject,
+          date: new Date(session.date).toLocaleDateString(),
+          time: session.time,
+          location: session.location
+        };
+      }));
     } catch (error) {
       console.error('Error loading dashboard data:', error);
     } finally {
@@ -91,15 +100,17 @@ const Dashboard = () => {
                   <div className="mb-3">
                     <UserProfileCard
                       user={session.otherPerson}
-                      role={isTutor ? 'Student' : 'Tutor'}
-                      isClickable={!isTutor}
+                      role={session.isMeStudent ? 'Tutor' : 'Student'}
+                      isClickable={session.isMeStudent}
                       targetUrl={`/tutor/${session.otherPerson?._id}`}
                     />
                   </div>
 
                   <div className="mt-3 space-y-1">
-                    <p className="text-sm text-gray-700">{session.date} at {session.time}</p>
-                    <p className="text-sm text-gray-500">{session.location}</p>
+                    {session.date && session.date !== 'Invalid Date' && (
+                      <p className="text-sm text-gray-700">{session.date}{session.time ? ` at ${session.time}` : ''}</p>
+                    )}
+                    {session.location && <p className="text-sm text-gray-500">{session.location}</p>}
                   </div>
                 </div>
               ))

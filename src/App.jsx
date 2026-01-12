@@ -13,7 +13,6 @@ import MyBookings from './pages/MyBookings';
 import SessionDetails from './pages/SessionDetails';
 import SessionHistory from './pages/SessionHistory';
 import ProfileSettings from './pages/ProfileSettings';
-import SubjectBrowse from './pages/SubjectBrowse';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import AdminDashboard from './pages/AdminDashboard';
@@ -123,7 +122,6 @@ function AppContent() {
             <Route path="/" element={user?.isAdmin ? <Navigate to="/admin" /> : <ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/find-tutors" element={<ProtectedRoute><FindTutors /></ProtectedRoute>} />
             <Route path="/tutor/:id" element={<ProtectedRoute><TutorProfile /></ProtectedRoute>} />
-            <Route path="/subjects" element={<ProtectedRoute><SubjectBrowse /></ProtectedRoute>} />
             <Route path="/booking/:id" element={<ProtectedRoute><BookingForm /></ProtectedRoute>} />
             <Route path="/bookings" element={<ProtectedRoute><MyBookings /></ProtectedRoute>} />
             <Route path="/session/:id" element={<ProtectedRoute><SessionDetails /></ProtectedRoute>} />

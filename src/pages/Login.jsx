@@ -24,15 +24,19 @@ const Login = () => {
     setError('');
     setLoading(true);
 
-    const result = await login(formData.email, formData.password);
+    try {
+      const result = await login(formData.email, formData.password);
 
-    if (result.success) {
-      navigate('/');
-    } else {
-      setError(result.message);
+      if (result.success) {
+        navigate('/');
+      } else {
+        setError(result.message);
+      }
+    } catch (err) {
+      setError(err.message || 'An unexpected error occurred');
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (

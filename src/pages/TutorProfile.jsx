@@ -116,6 +116,55 @@ const TutorProfile = () => {
               )}
             </div>
 
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-gray-900">Reviews ({reviews.length})</h2>
+              </div>
+
+              {reviews.length > 0 ? (
+                <div className="space-y-6">
+                  {displayedReviews.map((session, index) => (
+                    <div key={index} className="border-b border-gray-100 last:border-0 pb-6 last:pb-0">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center">
+                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold mr-3">
+                            {session.student?.name?.charAt(0) || 'A'}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-gray-900">{session.student?.name || 'Anonymous'}</p>
+                            <p className="text-xs text-gray-500">
+                              {session.review?.reviewedAt
+                                ? new Date(session.review.reviewedAt).toLocaleDateString()
+                                : 'Recent'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex text-yellow-400">
+                          {[...Array(5)].map((_, i) => (
+                            <span key={i} className={i < (session.review?.rating || 0) ? "text-yellow-400" : "text-gray-300"}>★</span>
+                          ))}
+                        </div>
+                      </div>
+                      <p className="text-gray-600 mt-2">{session.review?.comment || 'No comment provided'}</p>
+                    </div>
+                  ))}
+
+                  {reviews.length > 3 && (
+                    <button
+                      onClick={() => setShowAllReviews(!showAllReviews)}
+                      className="w-full py-2 text-blue-600 font-medium hover:bg-blue-50 rounded-lg transition-colors border border-blue-200"
+                    >
+                      {showAllReviews ? 'Show Less' : `Show All ${reviews.length} Reviews`}
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <p>No reviews yet</p>
+                </div>
+              )}
+            </div>
+
             <div className="bg-white rounded-lg shadow p-6 sticky top-4">
               <div className="space-y-3">
                 <button

@@ -13,7 +13,7 @@ class AIRecommendationService {
     if (process.env.GEMINI_API_KEY) {
       try {
         this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        this.model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
       } catch (error) {
         console.warn('Error initializing Gemini AI:', error.message);
         this.model = null;
@@ -71,7 +71,7 @@ class AIRecommendationService {
 
     recentSessions.forEach(session => {
       subjectFrequency[session.subject] = (subjectFrequency[session.subject] || 0) + 1;
-      
+
       if (session.location) {
         preferredLocations[session.location] = (preferredLocations[session.location] || 0) + 1;
       }
@@ -129,9 +129,21 @@ class AIRecommendationService {
     const prompt = this.buildPrompt(user, preferences, availableTutors, recentSessions);
 
     try {
-      const result = await this.model.generateContent(prompt);
+      // Create a timeout promise
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('AI Generation Timeout')), 10000)
+      );
+
+      // Race the generation against the timeout
+      const result = await Promise.race([
+        this.model.generateContent(prompt),
+        timeoutPromise
+      ]);
+
       const response = await result.response;
       const text = response.text();
+
+      console.log('✅ AI Service successfully generated recommendations using model:', this.model.model);
 
       const recommendations = this.parseAIResponse(text, availableTutors);
 
@@ -193,17 +205,17 @@ Provide your response in this EXACT format:
 RECOMMENDED_TUTORS: [tutor name 1], [tutor name 2], [tutor name 3], [tutor name 4], [tutor name 5]
 
 REASONING:
-[Explain in 2-3 sentences why each tutor was recommended based on the user's learning patterns]
+- [Tutor Name]: [Specific strength 1] | [Specific strength 2] | [Specific strength 3]
 
-Keep the reasoning concise and personalized to the user's actual history.`;
+Use the '|' character to separate distinct points. Keep each point concise (under 10 words).`;
   }
 
   parseAIResponse(text, availableTutors) {
     const recommendedNames = [];
-    
+
     const tutorLine = text.match(/RECOMMENDED_TUTORS:\s*(.+)/i);
     if (tutorLine) {
-      const names = tutorLine[1].split(',').map(name => 
+      const names = tutorLine[1].split(',').map(name =>
         name.trim().replace(/[\[\]]/g, '')
       );
       recommendedNames.push(...names);
@@ -211,7 +223,7 @@ Keep the reasoning concise and personalized to the user's actual history.`;
 
     const recommendations = [];
     for (const name of recommendedNames) {
-      const tutor = availableTutors.find(t => 
+      const tutor = availableTutors.find(t =>
         t.name.toLowerCase().includes(name.toLowerCase()) ||
         name.toLowerCase().includes(t.name.toLowerCase())
       );
@@ -232,9 +244,10 @@ Keep the reasoning concise and personalized to the user's actual history.`;
   }
 
   fallbackRecommendation(preferences, availableTutors) {
+    console.log('⚠️ Using Fallback Recommendation System');
     const subjectMatch = availableTutors.filter(tutor => {
       const tutorSubjects = tutor.tutorProfile?.subjects?.map(s => s.name.toLowerCase()) || [];
-      return preferences.mostFrequentSubjects.some(subject => 
+      return preferences.mostFrequentSubjects.some(subject =>
         tutorSubjects.some(ts => ts.includes(subject.toLowerCase()) || subject.toLowerCase().includes(ts))
       );
     });
@@ -248,7 +261,9 @@ Keep the reasoning concise and personalized to the user's actual history.`;
 
     return {
       recommendations: sortedTutors.slice(0, 5),
-      reasoning: `Based on your recent sessions in ${preferences.mostFrequentSubjects.join(', ')}, we've recommended tutors with high ratings and relevant expertise. These recommendations use a rule-based system (AI recommendations require API key configuration).`,
+      reasoning: `Based on your recent sessions in ${preferences.mostFrequentSubjects.join(', ')}:\n\n` +
+        sortedTutors.slice(0, 5).map(t => `- **${t.name}**: Highly rated (${t.tutorProfile?.rating || 0}★) | Expertise matches your subjects | proven track record`).join('\n') +
+        `\n\n(Note: These are rule-based recommendations pending AI service availability)`,
       preferences: {
         subjects: preferences.mostFrequentSubjects,
         location: preferences.preferredLocation,

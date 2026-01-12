@@ -203,7 +203,11 @@ exports.addReview = async (req, res) => {
     }
 
     if (session.status !== 'Completed') {
-      return res.status(400).json({ message: 'Can only review completed sessions' });
+      console.warn(`[AddReview] Attempted to review session ${session._id} with status '${session.status}'`);
+      return res.status(400).json({
+        message: `Can only review completed sessions. Current status: ${session.status}`,
+        currentStatus: session.status
+      });
     }
 
     session.review = {
@@ -235,7 +239,7 @@ exports.addReview = async (req, res) => {
     });
 
     const totalRating = allReviews.reduce((sum, s) => sum + s.review.rating, 0);
-    tutor.tutorProfile.rating = (totalRating / allReviews.length).toFixed(1);
+    tutor.tutorProfile.rating = parseFloat((totalRating / allReviews.length).toFixed(1));
     tutor.tutorProfile.reviewCount = allReviews.length;
 
     await tutor.save();

@@ -21,13 +21,13 @@ exports.getAllTutors = async (req, res) => {
     if (moduleCode) {
       const module = await Module.findOne({ moduleCode });
       console.log('Found module:', module ? module.name : 'not found');
-      
+
       if (module) {
         const tutorIds = module.tutors || [];
-        
+
         console.log('Module tutors array length:', tutorIds.length);
         console.log('Module name:', module.name);
-        
+
         if (tutorIds.length > 0) {
           query.$or = [
             { _id: { $in: tutorIds } },
@@ -62,6 +62,12 @@ exports.getAllTutors = async (req, res) => {
       .sort(sortOptions);
 
     console.log('Found tutors:', tutors.length);
+    tutors.forEach(t => {
+      if (t.tutorProfile && t.tutorProfile.rating > 0) {
+        console.log(`- Tutor ${t.name}: ${t.tutorProfile.rating} stars (${t.tutorProfile.reviewCount} reviews)`);
+      }
+    });
+
     res.json(tutors);
   } catch (error) {
     console.error('Error in getAllTutors:', error);
@@ -72,7 +78,7 @@ exports.getAllTutors = async (req, res) => {
 exports.getTutorById = async (req, res) => {
   try {
     const tutor = await User.findById(req.params.id).select('-password');
-    
+
     if (!tutor || !tutor.isTutor) {
       return res.status(404).json({ message: 'Tutor not found' });
     }
@@ -96,11 +102,11 @@ exports.getTutorById = async (req, res) => {
 exports.getRecommendedTutors = async (req, res) => {
   try {
     const user = await User.findById(req.user.userId);
-    
+
     let query = { isTutor: true };
-    
+
     if (user.subjectsNeedHelp && user.subjectsNeedHelp.length > 0) {
-      query['tutorProfile.subjects.name'] = { 
+      query['tutorProfile.subjects.name'] = {
         $in: user.subjectsNeedHelp.map(s => new RegExp(s, 'i'))
       };
     }

@@ -270,8 +270,8 @@ const MyBookings = () => {
                         </>
                       )}
 
-                      {/* Review allowed if (I am Student AND Past AND Not Reviewed) */}
-                      {isMeStudent && activeTab === 'past' && !session.review && (
+                      {/* Review allowed if (I am Student AND Past AND Not Reviewed AND Completed) */}
+                      {isMeStudent && activeTab === 'past' && !session.review && session.status === 'Completed' && (
                         <button
                           onClick={() => navigate(`/review/${session._id}`)}
                           className="flex-1 bg-yellow-100 text-yellow-800 py-2 px-4 rounded-lg hover:bg-yellow-200 transition-colors font-medium text-sm"

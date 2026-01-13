@@ -3,7 +3,11 @@ import axios from 'axios';
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
 const apiUrlEnv = import.meta.env.VITE_API_URL;
 
-const API_URL = apiUrlEnv || (backendUrl ? `${backendUrl}/api` : 'http://localhost:5000/api');
+const formattedBackendUrl = backendUrl && !backendUrl.startsWith('http')
+  ? `https://${backendUrl}`
+  : backendUrl;
+
+const API_URL = apiUrlEnv || (formattedBackendUrl ? `${formattedBackendUrl}/api` : 'http://localhost:5000/api');
 
 const api = axios.create({
   baseURL: API_URL,

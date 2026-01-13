@@ -13,8 +13,9 @@ services:
       - key: PORT
         value: 10000
 
-  - type: static
+  - type: web
     name: synapse-client
+    runtime: static
     root: .
     buildCommand: npm install && npm run build
     staticPublishPath: dist

@@ -2,7 +2,7 @@ services:
   - type: web
     name: synapse-server
     runtime: node
-    root: server
+    rootDir: server
     buildCommand: npm install
     startCommand: node server.js
     envVars:
@@ -16,7 +16,7 @@ services:
   - type: web
     name: synapse-client
     runtime: static
-    root: .
+    rootDir: .
     buildCommand: npm install && npm run build
     staticPublishPath: dist
     envVars:

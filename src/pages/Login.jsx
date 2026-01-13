@@ -10,6 +10,8 @@ const Login = () => {
     password: ''
   });
   const [error, setError] = useState('');
+  const [isAdminLogin, setIsAdminLogin] = useState(false);
+
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
@@ -45,14 +47,16 @@ const Login = () => {
         <div>
           <img src="/synapse_logo.png" alt="Synapse Logo" className="mx-auto h-20 w-auto" />
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to your account
+            Sign in to your account ({isAdminLogin ? 'Admin' : 'Student'})
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Or{' '}
-            <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500">
-              create a new account
-            </Link>
-          </p>
+          {!isAdminLogin && (
+            <p className="mt-2 text-center text-sm text-gray-600">
+              Or{' '}
+              <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500">
+                create a new account
+              </Link>
+            </p>
+          )}
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
@@ -72,7 +76,7 @@ const Login = () => {
                 autoComplete="email"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
+                placeholder={isAdminLogin ? "Admin Email" : "Student Email"}
                 value={formData.email}
                 onChange={handleChange}
               />
@@ -95,12 +99,19 @@ const Login = () => {
             </div>
           </div>
 
-          <div className="flex items-center justify-end">
+          <div className="flex flex-col items-end space-y-2">
             <div className="text-sm">
               <Link to="/forgot-password" className="font-medium text-blue-600 hover:text-blue-500">
                 Forgot your password?
               </Link>
             </div>
+            <button
+              type="button"
+              onClick={() => setIsAdminLogin(!isAdminLogin)}
+              className="text-sm font-medium text-gray-500 hover:text-gray-900 focus:outline-none"
+            >
+              {isAdminLogin ? 'Student Login' : 'Admin Login'}
+            </button>
           </div>
 
           <div>

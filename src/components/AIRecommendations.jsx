@@ -149,17 +149,22 @@ const AIRecommendations = () => {
                 {reason && (
                   <div className="mb-4 bg-purple-50 p-3 rounded-lg border border-purple-100">
                     <ul className="space-y-1">
-                      {reason.split('|').map((point, idx) => (
-                        <li key={idx} className="flex items-start text-xs text-purple-800">
-                          <span className="mr-2 mt-0.5 text-purple-600">•</span>
-                          <span className="italic">{point.trim()}</span>
-                        </li>
-                      ))}
+                      {reason.split('|')
+                        .map(p => p.trim())
+                        .filter(p => !p.toLowerCase().includes('expertise matches your subjects'))
+                        .map(p => p.toLowerCase().includes('proven track record') ? 'Proven Track Record' : p)
+                        .map((point, idx) => (
+                          <li key={idx} className="flex items-start text-xs text-purple-800">
+                            <span className="mr-2 mt-0.5 text-purple-600">•</span>
+                            <span className="italic">{point}</span>
+                          </li>
+                        ))}
                     </ul>
                   </div>
                 )}
 
                 <div className="mt-auto">
+                  <p className="text-[10px] font-bold text-gray-500 mb-1.5 uppercase tracking-wide">Subjects Teaching</p>
                   <div className="flex flex-wrap gap-1.5 mb-4">
                     {tutor.tutorProfile?.subjects?.slice(0, 2).map((subject, idx) => (
                       <span key={idx} className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-[10px] font-medium truncate max-w-full">

@@ -72,13 +72,37 @@ exports.dismissReport = async (req, res) => {
 exports.resolveReport = async (req, res) => {
     try {
         const { reportId } = req.params;
+        const { suspensionHours, suspensionReason } = req.body;
+
         const report = await Report.findById(reportId);
         if (!report) return res.status(404).json({ message: 'Report not found' });
+
+        // Handle Suspension
+        if (suspensionHours && suspensionHours > 0) {
+            const userToSuspend = await User.findById(report.reportedUser);
+            if (userToSuspend) {
+                const expires = new Date();
+                expires.setHours(expires.getHours() + parseInt(suspensionHours));
+
+                userToSuspend.suspensionExpires = expires;
+                userToSuspend.suspensionReason = suspensionReason || 'Violation of terms';
+                await userToSuspend.save();
+
+                // Also create a notification for the user
+                await Notification.create({
+                    user: userToSuspend._id,
+                    title: 'Account Suspended',
+                    message: `Your account has been suspended for ${suspensionHours} hours. Reason: ${suspensionReason || 'Violation of terms'}.`,
+                    type: 'error'
+                });
+            }
+        }
 
         report.status = 'Resolved';
         await report.save();
         res.json(report);
     } catch (error) {
+        console.error('Resolve Error:', error);
         res.status(500).json({ message: 'Server error' });
     }
 };

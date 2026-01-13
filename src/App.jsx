@@ -13,6 +13,7 @@ import MyBookings from './pages/MyBookings';
 import SessionDetails from './pages/SessionDetails';
 import SessionHistory from './pages/SessionHistory';
 import ProfileSettings from './pages/ProfileSettings';
+import MyProfile from './pages/MyProfile';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import AdminDashboard from './pages/AdminDashboard';
@@ -128,6 +129,7 @@ function AppContent() {
             <Route path="/history" element={<ProtectedRoute><SessionHistory /></ProtectedRoute>} />
             <Route path="/review/:sessionId" element={<ProtectedRoute><LeaveReview /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><MyProfile /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

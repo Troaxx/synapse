@@ -79,7 +79,7 @@ const Dashboard = () => {
 
         <div className="bg-white rounded-lg shadow p-6 mb-8">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-gray-900">Upcoming Sessions</h2>
+            <h2 className="text-xl font-bold text-gray-900">Confirmed Sessions</h2>
             <button
               onClick={() => navigate('/bookings')}
               className="text-blue-600 hover:text-blue-700 text-sm font-medium"
@@ -116,7 +116,7 @@ const Dashboard = () => {
               ))
             ) : (
               <div className="col-span-2 flex flex-col items-center justify-center py-8">
-                <p className="text-gray-500 mb-4">No upcoming sessions</p>
+                <p className="text-gray-500 mb-4">No confirmed sessions</p>
                 {!isTutor && (
                   <button
                     onClick={() => navigate('/find-tutors')}

@@ -142,6 +142,8 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
+  suspensionExpires: Date,
+  suspensionReason: String,
   resetPasswordToken: String,
   resetPasswordExpires: Date
 }, {

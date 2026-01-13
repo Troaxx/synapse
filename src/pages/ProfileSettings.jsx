@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { MODULES } from '../constants/modules';
+
+const GRADES = ['Z / Distinction', 'A', 'B+', 'B'];
 
 const ProfileSettings = () => {
-  const { user, updateProfile, loadUserProfile } = useAuth();
-  const [activeTab, setActiveTab] = useState('profile');
+  const { user, updateProfile, loadUserProfile, deleteAccount } = useAuth();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const [profileData, setProfileData] = useState({
     name: '',
@@ -14,23 +17,15 @@ const ProfileSettings = () => {
     year: 'Year 1',
     course: '',
     bio: '',
-    profilePhoto: ''
+    profilePhoto: '',
+    isTutor: false
   });
 
-  const [subjectsNeed, setSubjectsNeed] = useState([]);
-  const [newSubjectNeed, setNewSubjectNeed] = useState('');
-
-  const [subjectsOffer, setSubjectsOffer] = useState([]);
-  const [newSubjectOffer, setNewSubjectOffer] = useState('');
-
-  const [notifications, setNotifications] = useState({
-    emailBookings: true,
-    emailMessages: true,
-    emailReminders: true,
-    pushBookings: true,
-    pushMessages: false,
-    pushReminders: true
-  });
+  const [tutorSubjects, setTutorSubjects] = useState([
+    { moduleCode: '', name: '', grade: '' },
+    { moduleCode: '', name: '', grade: '' },
+    { moduleCode: '', name: '', grade: '' }
+  ]);
 
   useEffect(() => {
     if (user) {
@@ -39,30 +34,36 @@ const ProfileSettings = () => {
         email: user.email || '',
         phone: user.phone || '',
         year: user.year || 'Year 1',
-        course: user.course || '',        bio: user.bio || '',
-        profilePhoto: user.profilePhoto || ''
+        course: user.course || '',
+        bio: user.bio || '',
+        profilePhoto: user.profilePhoto || '',
+        isTutor: user.isTutor || false
       });
-      setSubjectsNeed(user.subjectsNeedHelp || []);
-      setSubjectsOffer(user.subjectsCanTeach || []);
-      setNotifications(user.notifications || {
-        emailBookings: true,
-        emailMessages: true,
-        emailReminders: true,
-        pushBookings: true,
-        pushMessages: false,
-        pushReminders: true
-      });
+
+      if (user.tutorProfile?.subjects && user.tutorProfile.subjects.length > 0) {
+        const loadedSubjects = [...user.tutorProfile.subjects];
+        while (loadedSubjects.length < 3) {
+          loadedSubjects.push({ moduleCode: '', name: '', grade: '' });
+        }
+        setTutorSubjects(loadedSubjects.slice(0, 3));
+      } else {
+        setTutorSubjects([
+          { moduleCode: '', name: '', grade: '' },
+          { moduleCode: '', name: '', grade: '' },
+          { moduleCode: '', name: '', grade: '' }
+        ]);
+      }
     }
+    document.title = 'Synapse - Settings';
   }, [user]);
 
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) { // 2MB limit
+      if (file.size > 2 * 1024 * 1024) {
         setMessage({ type: 'error', text: 'File size must be less than 2MB' });
         return;
       }
-
       const reader = new FileReader();
       reader.onloadend = () => {
         setProfileData(prev => ({
@@ -75,19 +76,28 @@ const ProfileSettings = () => {
   };
 
   const handleProfileChange = (e) => {
+    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
     setProfileData({
       ...profileData,
-      [e.target.name]: e.target.value
+      [e.target.name]: value
     });
   };
 
-  const handleNotificationChange = (key) => {
-    const updated = {
-      ...notifications,
-      [key]: !notifications[key]
-    };
-    setNotifications(updated);
-    handleSaveNotifications(updated);
+  const handleSubjectChange = (index, field, value) => {
+    const updatedSubjects = [...tutorSubjects];
+    if (field === 'moduleCode') {
+      const selectedModule = MODULES.find(m => m.moduleCode === value);
+      if (selectedModule) {
+        updatedSubjects[index] = {
+          moduleCode: selectedModule.moduleCode,
+          name: selectedModule.name,
+          grade: updatedSubjects[index].grade
+        };
+      }
+    } else {
+      updatedSubjects[index][field] = value;
+    }
+    setTutorSubjects(updatedSubjects);
   };
 
   const handleSaveProfile = async (e) => {
@@ -95,8 +105,33 @@ const ProfileSettings = () => {
     setLoading(true);
     setMessage({ type: '', text: '' });
 
+    if (profileData.isTutor) {
+      const filledSubjects = tutorSubjects.filter(s => s.moduleCode && s.name && s.grade);
+      if (filledSubjects.length !== 3) {
+        setMessage({ type: 'error', text: 'Please select exactly 3 subjects and their grades to be a tutor.' });
+        setLoading(false);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+      const uniqueModules = new Set(filledSubjects.map(s => s.moduleCode));
+      if (uniqueModules.size !== 3) {
+        setMessage({ type: 'error', text: 'Please select 3 different subjects.' });
+        setLoading(false);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+    }
+
     try {
-      const result = await updateProfile(profileData);
+      const updatePayload = {
+        ...profileData,
+        tutorProfile: {
+          ...(user.tutorProfile || {}),
+          subjects: profileData.isTutor ? tutorSubjects : []
+        }
+      };
+
+      const result = await updateProfile(updatePayload);
       if (result.success) {
         setMessage({ type: 'success', text: 'Profile updated successfully!' });
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -113,43 +148,17 @@ const ProfileSettings = () => {
     }
   };
 
-  const handleSaveNotifications = async (updatedNotifications) => {
-    try {
-      await updateProfile({ notifications: updatedNotifications });
-      await loadUserProfile();
-    } catch (error) {
-      console.error('Error updating notifications:', error);
+  const handleDeleteAccount = async () => {
+    setLoading(true);
+    const result = await deleteAccount();
+    if (!result.success) {
+      setMessage({ type: 'error', text: result.message || 'Failed to delete account' });
+      setLoading(false);
+      setShowDeleteConfirm(false);
     }
-  };
-
-  const handleAddSubjectNeed = () => {
-    if (newSubjectNeed.trim() && !subjectsNeed.includes(newSubjectNeed.trim())) {
-      const updated = [...subjectsNeed, newSubjectNeed.trim()];
-      setSubjectsNeed(updated);
-      setNewSubjectNeed('');
-      updateProfile({ subjectsNeedHelp: updated }).then(() => loadUserProfile());
-    }
-  };
-
-  const handleRemoveSubjectNeed = (subject) => {
-    const updated = subjectsNeed.filter(s => s !== subject);
-    setSubjectsNeed(updated);
-    updateProfile({ subjectsNeedHelp: updated }).then(() => loadUserProfile());
-  };
-
-  const handleAddSubjectOffer = () => {
-    if (newSubjectOffer.trim() && !subjectsOffer.includes(newSubjectOffer.trim())) {
-      const updated = [...subjectsOffer, newSubjectOffer.trim()];
-      setSubjectsOffer(updated);
-      setNewSubjectOffer('');
-      updateProfile({ subjectsCanTeach: updated }).then(() => loadUserProfile());
-    }
-  };
-
-  const handleRemoveSubjectOffer = (subject) => {
-    const updated = subjectsOffer.filter(s => s !== subject);
-    setSubjectsOffer(updated);
-    updateProfile({ subjectsCanTeach: updated }).then(() => loadUserProfile());
+    // If success, AuthContext handles logout/redirect (or we should redirect here?)
+    // AuthContext `deleteAccount` calls `logout` which clears state. 
+    // Usually ProfileSettings is protected, so clearing user state triggers redirect to login via ProtectedRoute.
   };
 
   const scrollToSection = (id) => {
@@ -172,14 +181,9 @@ const ProfileSettings = () => {
                   onClick={() => scrollToSection('profile-section')}
                   className="w-full text-left px-4 py-3 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition-colors"
                 >
-                  Personal Profile
+                  Profile Settings
                 </button>
-                <button
-                  onClick={() => scrollToSection('notifications-section')}
-                  className="w-full text-left px-4 py-3 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition-colors"
-                >
-                  Notifications
-                </button>
+
                 <button
                   onClick={() => scrollToSection('account-section')}
                   className="w-full text-left px-4 py-3 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition-colors"
@@ -199,7 +203,7 @@ const ProfileSettings = () => {
             )}
 
             <div id="profile-section" className="bg-white rounded-lg shadow p-6 scroll-mt-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Personal Profile</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Profile Settings</h2>
               <form onSubmit={handleSaveProfile}>
                 <div className="mb-6">
                   <div className="flex items-center gap-6 mb-6">
@@ -323,6 +327,85 @@ const ProfileSettings = () => {
                   ></textarea>
                 </div>
 
+                {/* Tutor Settings */}
+                <div className="bg-blue-50 rounded-lg p-6 mb-6 border border-blue-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900">Tutor Availability</h3>
+                      <p className="text-sm text-gray-600">Toggle this to allow students to book you as a tutor.</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name="isTutor"
+                        checked={profileData.isTutor}
+                        onChange={handleProfileChange}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus: ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+
+                  {profileData.isTutor && (
+                    <div className="animate-fadeIn">
+                      <div className="h-px bg-blue-200 my-4"></div>
+                      <label className="block text-sm font-bold text-gray-900 mb-3">
+                        Subjects You Teach (Select 3)
+                      </label>
+                      <div className="space-y-4">
+                        {tutorSubjects.map((subject, index) => {
+                          const availableModules = MODULES.filter(m => {
+                            const usedModules = tutorSubjects
+                              .filter((_, i) => i !== index)
+                              .map(s => s.moduleCode);
+                            return !usedModules.includes(m.moduleCode) || m.moduleCode === subject.moduleCode;
+                          });
+
+                          return (
+                            <div key={index} className="p-4 bg-white rounded border border-blue-200 shadow-sm">
+                              <div className="flex justify-between items-center mb-2">
+                                <span className="text-xs font-semibold text-blue-600 uppercase tracking-wide">Subject {index + 1}</span>
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div>
+                                  <label className="block text-xs text-gray-500 mb-1">Module</label>
+                                  <select
+                                    value={subject.moduleCode}
+                                    onChange={(e) => handleSubjectChange(index, 'moduleCode', e.target.value)}
+                                    className="w-full px-3 py-2 border border-blue-300 rounded-md text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                    required
+                                  >
+                                    <option value="">Select module</option>
+                                    {availableModules.map(module => (
+                                      <option key={module.moduleCode} value={module.moduleCode}>
+                                        {module.moduleCode} - {module.name}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div>
+                                  <label className="block text-xs text-gray-500 mb-1">Grade Achieved</label>
+                                  <select
+                                    value={subject.grade}
+                                    onChange={(e) => handleSubjectChange(index, 'grade', e.target.value)}
+                                    className="w-full px-3 py-2 border border-blue-300 rounded-md text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                    required
+                                  >
+                                    <option value="">Select grade</option>
+                                    {GRADES.map(grade => (
+                                      <option key={grade} value={grade}>{grade}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <button
                   type="submit"
                   disabled={loading}
@@ -338,81 +421,7 @@ const ProfileSettings = () => {
               </form>
             </div>
 
-            <div id="notifications-section" className="bg-white rounded-lg shadow p-6 scroll-mt-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Notification Preferences</h2>
 
-              <div className="mb-8">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Email Notifications</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-gray-900">Booking Confirmations</p>
-                      <p className="text-sm text-gray-600">Get notified when bookings are confirmed or cancelled</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={notifications.emailBookings}
-                        onChange={() => handleNotificationChange('emailBookings')}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                    </label>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-gray-900">Session Reminders</p>
-                      <p className="text-sm text-gray-600">Get reminded about upcoming sessions</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={notifications.emailReminders}
-                        onChange={() => handleNotificationChange('emailReminders')}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Push Notifications</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-gray-900">Booking Confirmations</p>
-                      <p className="text-sm text-gray-600">Get push notifications for booking updates</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={notifications.pushBookings}
-                        onChange={() => handleNotificationChange('pushBookings')}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                    </label>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-gray-900">Session Reminders</p>
-                      <p className="text-sm text-gray-600">Get push reminders about upcoming sessions</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={notifications.pushReminders}
-                        onChange={() => handleNotificationChange('pushReminders')}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
 
             <div id="account-section" className="bg-white rounded-lg shadow p-6 scroll-mt-6">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Account Settings</h2>
@@ -471,16 +480,7 @@ const ProfileSettings = () => {
                       <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                     </label>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-gray-900">Show Email</p>
-                      <p className="text-sm text-gray-600">Display your email on your profile</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                    </label>
-                  </div>
+
                 </div>
               </div>
 
@@ -489,9 +489,34 @@ const ProfileSettings = () => {
                 <p className="text-red-700 mb-4">
                   Once you delete your account, there is no going back. Please be certain.
                 </p>
-                <button className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-semibold">
-                  Delete Account
-                </button>
+                {!showDeleteConfirm ? (
+                  <button
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-semibold"
+                  >
+                    Delete Account
+                  </button>
+                ) : (
+                  <div className="bg-white p-4 rounded-lg border border-red-200 mt-2">
+                    <p className="font-semibold text-red-800 mb-3">Are you sure? This action cannot be undone.</p>
+                    <div className="flex gap-4">
+                      <button
+                        onClick={handleDeleteAccount}
+                        disabled={loading}
+                        className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-semibold text-sm"
+                      >
+                        {loading ? 'Deleting...' : 'Yes, Delete My Account'}
+                      </button>
+                      <button
+                        onClick={() => setShowDeleteConfirm(false)}
+                        disabled={loading}
+                        className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors font-semibold text-sm"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

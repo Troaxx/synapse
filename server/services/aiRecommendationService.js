@@ -40,10 +40,21 @@ class AIRecommendationService {
 
       const userPreferences = await this.analyzeUserPreferences(user, recentSessions);
 
-      const availableTutors = await User.find({
+      let availableTutors = await User.find({
         isTutor: true,
         _id: { $ne: userId }
       }).select('-password');
+
+      console.log(`Debug AI: UserID: ${userId}, Available Tutors Count: ${availableTutors.length}`);
+      console.log('Debug AI: Available Tutor IDs:', availableTutors.map(t => t._id.toString()));
+
+      const isSelfInList = availableTutors.some(t => t._id.toString() === userId.toString());
+      if (isSelfInList) {
+        console.error('CRITICAL: User is still in available tutors list!');
+      }
+
+      // Paranoid check to ensure current user is definitely not in the list
+      availableTutors = availableTutors.filter(t => t._id.toString() !== userId.toString());
 
       if (!this.model) {
         return this.fallbackRecommendation(userPreferences, availableTutors);
@@ -131,7 +142,7 @@ class AIRecommendationService {
     try {
       // Create a timeout promise
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('AI Generation Timeout')), 10000)
+        setTimeout(() => reject(new Error('AI Generation Timeout')), 30000)
       );
 
       // Race the generation against the timeout
@@ -148,7 +159,7 @@ class AIRecommendationService {
       const recommendations = this.parseAIResponse(text, availableTutors);
 
       return {
-        recommendations: recommendations.slice(0, 5),
+        recommendations: recommendations.slice(0, 3),
         reasoning: text,
         preferences: {
           subjects: preferences.mostFrequentSubjects,
@@ -157,7 +168,11 @@ class AIRecommendationService {
         }
       };
     } catch (error) {
-      console.error('Error calling Gemini API:', error);
+      if (error.message === 'AI Generation Timeout') {
+        console.warn('⚠️ Gemini API timed out, switching to fallback recommendations');
+      } else {
+        console.error('Error calling Gemini API:', error);
+      }
       return this.fallbackRecommendation(preferences, availableTutors);
     }
   }
@@ -194,7 +209,7 @@ User's Learning History:
 Available Tutors:
 ${JSON.stringify(tutorsList, null, 2)}
 
-Task: Analyze the user's learning patterns and recommend the TOP 5 tutors that would be most beneficial for this student. Consider:
+Task: Analyze the user's learning patterns and recommend the TOP 3 tutors that would be most beneficial for this student. Consider:
 1. Subject match with user's recent sessions and needs
 2. Tutor's rating and experience (total sessions)
 3. Tutor's specialization badges
@@ -202,7 +217,7 @@ Task: Analyze the user's learning patterns and recommend the TOP 5 tutors that w
 5. Diversity - also suggest tutors for subjects the user expressed interest in but hasn't tried yet
 
 Provide your response in this EXACT format:
-RECOMMENDED_TUTORS: [tutor name 1], [tutor name 2], [tutor name 3], [tutor name 4], [tutor name 5]
+RECOMMENDED_TUTORS: [tutor name 1], [tutor name 2], [tutor name 3]
 
 REASONING:
 - [Tutor Name]: [Specific strength 1] | [Specific strength 2] | [Specific strength 3]
@@ -224,19 +239,19 @@ Use the '|' character to separate distinct points. Keep each point concise (unde
     const recommendations = [];
     for (const name of recommendedNames) {
       const tutor = availableTutors.find(t =>
-        t.name.toLowerCase().includes(name.toLowerCase()) ||
-        name.toLowerCase().includes(t.name.toLowerCase())
+      (t.name.toLowerCase().includes(name.toLowerCase()) ||
+        name.toLowerCase().includes(t.name.toLowerCase()))
       );
       if (tutor && !recommendations.find(r => r._id.equals(tutor._id))) {
         recommendations.push(tutor);
       }
     }
 
-    if (recommendations.length < 5) {
+    if (recommendations.length < 3) {
       const remaining = availableTutors
         .filter(t => !recommendations.find(r => r._id.equals(t._id)))
         .sort((a, b) => (b.tutorProfile?.rating || 0) - (a.tutorProfile?.rating || 0))
-        .slice(0, 5 - recommendations.length);
+        .slice(0, 3 - recommendations.length);
       recommendations.push(...remaining);
     }
 
@@ -260,9 +275,9 @@ Use the '|' character to separate distinct points. Keep each point concise (unde
       });
 
     return {
-      recommendations: sortedTutors.slice(0, 5),
+      recommendations: sortedTutors.slice(0, 3),
       reasoning: `Based on your recent sessions in ${preferences.mostFrequentSubjects.join(', ')}:\n\n` +
-        sortedTutors.slice(0, 5).map(t => `- **${t.name}**: Highly rated (${t.tutorProfile?.rating || 0}★) | Expertise matches your subjects | proven track record`).join('\n') +
+        sortedTutors.slice(0, 3).map(t => `- **${t.name}**: Highly rated (${t.tutorProfile?.rating || 0}★) | Expertise matches your subjects | proven track record`).join('\n') +
         `\n\n(Note: These are rule-based recommendations pending AI service availability)`,
       preferences: {
         subjects: preferences.mostFrequentSubjects,

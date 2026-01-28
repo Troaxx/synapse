@@ -81,15 +81,15 @@ const AIRecommendations = () => {
 
         {recommendations?.preferences && (
           <div className="mb-6">
-            <p className="text-sm text-gray-500 mb-2">Based on your learning history:</p>
-            <div className="flex flex-wrap gap-2">
+            <p className="text-lg font-medium text-gray-700 mb-3">Based on your learning history:</p>
+            <div className="flex flex-wrap gap-3">
               {recommendations.preferences.subjects.length > 0 && (
-                <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold">
+                <span className="px-4 py-2 bg-blue-50 text-blue-700 rounded-full text-base font-semibold border border-blue-100 shadow-sm">
                   📚 {recommendations.preferences.subjects.join(', ')}
                 </span>
               )}
               {recommendations.preferences.location !== 'Any' && (
-                <span className="px-3 py-1 bg-green-50 text-green-700 rounded-full text-xs font-semibold">
+                <span className="px-4 py-2 bg-green-50 text-green-700 rounded-full text-base font-semibold border border-green-100 shadow-sm">
                   📍 {recommendations.preferences.location}
                 </span>
               )}
@@ -97,7 +97,7 @@ const AIRecommendations = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {recommendations?.recommendations?.map((tutor, index) => {
             // Function to extract reason for this specific tutor
             const getTutorReason = () => {
@@ -115,59 +115,59 @@ const AIRecommendations = () => {
             return (
               <div
                 key={tutor._id}
-                className="group relative border border-gray-200 rounded-xl p-5 hover:shadow-xl hover:border-purple-300 transition-all duration-300 bg-white flex flex-col cursor-pointer"
+                className="group relative border border-gray-200 rounded-xl p-8 hover:shadow-2xl hover:border-purple-300 transition-all duration-300 bg-white flex flex-col cursor-pointer transform hover:-translate-y-1"
                 onClick={() => navigate(`/tutor/${tutor._id}`)}
               >
                 {index === 0 && (
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-md z-10 flex items-center gap-1">
-                    <span className="text-yellow-300">★</span> Top Match
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-base font-bold px-6 py-2 rounded-full shadow-lg z-10 flex items-center gap-2">
+                    <span className="text-yellow-300 text-xl">★</span> Top Match
                   </div>
                 )}
 
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-14 h-14 bg-gray-100 rounded-full flex-shrink-0 overflow-hidden border border-gray-100">
+                <div className="flex items-center gap-6 mb-8">
+                  <div className="w-24 h-24 bg-gray-100 rounded-full flex-shrink-0 overflow-hidden border-2 border-white shadow-md">
                     {tutor.profilePhoto ? (
                       <img src={tutor.profilePhoto} alt={tutor.name} className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400 font-bold bg-gray-50 text-xl">
+                      <div className="w-full h-full flex items-center justify-center text-gray-400 font-bold bg-gray-50 text-4xl">
                         {tutor.name?.charAt(0)}
                       </div>
                     )}
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-900 line-clamp-1">{tutor.name}</h3>
-                    <p className="text-xs text-gray-500">{tutor.year} | {tutor.course}</p>
-                    <div className="flex items-center mt-1">
-                      <span className="text-yellow-400 text-sm">★</span>
-                      <span className="text-xs font-bold text-gray-900 ml-1">{tutor.tutorProfile?.rating || 0}</span>
-                      <span className="text-xs text-gray-400 ml-1">({tutor.tutorProfile?.reviewCount || 0})</span>
+                    <h3 className="text-2xl font-bold text-gray-900 line-clamp-1 mb-1">{tutor.name}</h3>
+                    <p className="text-base text-gray-600">{tutor.year} | {tutor.course}</p>
+                    <div className="flex items-center mt-3 bg-gray-50 px-3 py-1 rounded-lg inline-flex">
+                      <span className="text-yellow-400 text-xl">★</span>
+                      <span className="text-lg font-bold text-gray-900 ml-2">{tutor.tutorProfile?.rating || 0}</span>
+                      <span className="text-sm text-gray-500 ml-2">({tutor.tutorProfile?.reviewCount || 0} reviews)</span>
                     </div>
                   </div>
                 </div>
 
                 {/* AI Reason Section */}
                 {reason && (
-                  <div className="mb-4 bg-purple-50 p-3 rounded-lg border border-purple-100">
-                    <ul className="space-y-1">
+                  <div className="mb-8 bg-purple-50 p-6 rounded-2xl border border-purple-100">
+                    <ul className="space-y-4">
                       {reason.split('|')
                         .map(p => p.trim())
                         .filter(p => !p.toLowerCase().includes('expertise matches your subjects'))
                         .map(p => p.toLowerCase().includes('proven track record') ? 'Proven Track Record' : p)
                         .map((point, idx) => (
-                          <li key={idx} className="flex items-start text-xs text-purple-800">
-                            <span className="mr-2 mt-0.5 text-purple-600">•</span>
-                            <span className="italic">{point}</span>
+                          <li key={idx} className="flex items-start text-base text-purple-900 font-medium">
+                            <span className="mr-3 text-purple-600 text-xl leading-none mt-1">•</span>
+                            <span className="leading-snug">{point}</span>
                           </li>
                         ))}
                     </ul>
                   </div>
                 )}
 
-                <div className="mt-auto">
-                  <p className="text-[10px] font-bold text-gray-500 mb-1.5 uppercase tracking-wide">Subjects Teaching</p>
-                  <div className="flex flex-wrap gap-1.5 mb-4">
-                    {tutor.tutorProfile?.subjects?.slice(0, 2).map((subject, idx) => (
-                      <span key={idx} className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-[10px] font-medium truncate max-w-full">
+                <div className="mt-auto pt-6 border-t border-gray-100">
+                  <p className="text-sm font-bold text-gray-500 mb-3 uppercase tracking-wider">Subjects Teaching</p>
+                  <div className="flex flex-wrap gap-2 mb-8">
+                    {tutor.tutorProfile?.subjects?.slice(0, 3).map((subject, idx) => (
+                      <span key={idx} className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-semibold truncate max-w-full">
                         {subject.name}
                       </span>
                     ))}
@@ -178,9 +178,9 @@ const AIRecommendations = () => {
                       e.stopPropagation();
                       navigate(`/tutor/${tutor._id}`);
                     }}
-                    className="w-full bg-white text-purple-600 border border-purple-200 py-2 rounded-lg hover:bg-purple-600 hover:text-white transition-colors text-sm font-semibold group-hover:border-purple-600"
+                    className="w-full bg-white text-purple-600 border border-purple-200 py-3 rounded-xl hover:bg-purple-600 hover:text-white transition-colors text-base font-bold group-hover:border-purple-600 shadow-sm"
                   >
-                    View Profile
+                    View Full Profile
                   </button>
                 </div>
               </div>

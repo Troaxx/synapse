@@ -264,7 +264,7 @@ Use the '|' character to separate distinct points. Keep each point concise (unde
       const tutorSubjects = tutor.tutorProfile?.subjects?.map(s => s.name.toLowerCase()) || [];
       return preferences.mostFrequentSubjects.some(subject =>
         tutorSubjects.some(ts => ts.includes(subject.toLowerCase()) || subject.toLowerCase().includes(ts))
-      );
+      ); // Check if tutor teaches user's frequent subjects
     });
 
     const sortedTutors = [...subjectMatch, ...availableTutors.filter(t => !subjectMatch.includes(t))]
@@ -272,7 +272,7 @@ Use the '|' character to separate distinct points. Keep each point concise (unde
         const ratingA = a.tutorProfile?.rating || 0;
         const ratingB = b.tutorProfile?.rating || 0;
         return ratingB - ratingA;
-      });
+      }); // Sort by rating high to low (in general, not specified reviews/ratings)
 
     return {
       recommendations: sortedTutors.slice(0, 3),

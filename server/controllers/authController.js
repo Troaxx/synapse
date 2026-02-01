@@ -1,57 +1,94 @@
-const User = require('../models/User');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const MODULES = require('../constants/modules');
+const User = require("../models/User");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const MODULES = require("../constants/modules");
 
 const generateUserId = () => {
-  return 'U' + Date.now().toString().slice(-4) + Math.random().toString(36).substr(2, 4).toUpperCase();
+  return (
+    "U" +
+    Date.now().toString().slice(-4) +
+    Math.random().toString(36).substr(2, 4).toUpperCase()
+  );
 };
 
 exports.register = async (req, res) => {
   try {
-    const { email, password, name, phone, year, course, tutorSubjects, admissionNumber, isTutor } = req.body;
+    const {
+      email,
+      password,
+      name,
+      phone,
+      year,
+      course,
+      tutorSubjects,
+      admissionNumber,
+      isTutor,
+    } = req.body;
 
     // Robustly handle isTutor boolean (in case it comes as string "false" or "true")
-    const isTutorBool = isTutor === true || isTutor === 'true';
+    const isTutorBool = isTutor === true || isTutor === "true";
 
-    console.log(`[Register] Attempting registration for ${email}. isTutor=${isTutor} (parsed: ${isTutorBool})`);
+    console.log(
+      `[Register] Attempting registration for ${email}. isTutor=${isTutor} (parsed: ${isTutorBool})`,
+    );
 
     const existingUser = await User.findOne({
-      $or: [{ email }, { admissionNumber }]
+      $or: [{ email }, { admissionNumber }],
     });
 
     if (existingUser) {
-      return res.status(400).json({ message: 'User with this email or Admission Number already exists' });
+      return res.status(400).json({
+        message: "User with this email or Admission Number already exists",
+      });
     }
 
     const adminNoRegex = /^\d{7}[A-Z]$/;
     if (!adminNoRegex.test(admissionNumber)) {
-      return res.status(400).json({ message: 'Invalid Admission Number format' });
+      return res
+        .status(400)
+        .json({ message: "Invalid Admission Number format" });
     }
 
     const emailRegex = /^\d{7}[a-zA-Z]@student\.tp\.edu\.sg$/;
     if (!emailRegex.test(email)) {
-      return res.status(400).json({ message: 'Email must be a valid TP student email (e.g. 2404908B@student.tp.edu.sg)' });
+      return res.status(400).json({
+        message:
+          "Email must be a valid TP student email (e.g. 2404908B@student.tp.edu.sg)",
+      });
     }
 
-    const emailPrefix = email.split('@')[0].toUpperCase();
+    const emailPrefix = email.split("@")[0].toUpperCase();
     if (emailPrefix !== admissionNumber) {
-      return res.status(400).json({ message: 'Email must match Admission Number' });
+      return res
+        .status(400)
+        .json({ message: "Email must match Admission Number" });
     }
 
     if (isTutorBool) {
-      if (!tutorSubjects || !Array.isArray(tutorSubjects) || tutorSubjects.length !== 3) {
-        return res.status(400).json({ message: 'Exactly 3 subjects are required for tutors' });
+      if (
+        !tutorSubjects ||
+        !Array.isArray(tutorSubjects) ||
+        tutorSubjects.length !== 3
+      ) {
+        return res
+          .status(400)
+          .json({ message: "Exactly 3 subjects are required for tutors" });
       }
 
       for (const subject of tutorSubjects) {
         if (!subject.moduleCode || !subject.name || !subject.grade) {
-          return res.status(400).json({ message: 'Each subject must have moduleCode, name, and grade' });
+          return res.status(400).json({
+            message: "Each subject must have moduleCode, name, and grade",
+          });
         }
 
-        const validModule = MODULES.find(m => m.moduleCode === subject.moduleCode && m.name === subject.name);
+        const validModule = MODULES.find(
+          (m) => m.moduleCode === subject.moduleCode && m.name === subject.name,
+        );
         if (!validModule) {
-          return res.status(400).json({ message: `Invalid module: ${subject.moduleCode} - ${subject.name}` });
+          return res.status(400).json({
+            message: `Invalid module: ${subject.moduleCode} - ${subject.name}`,
+          });
         }
       }
     }
@@ -69,22 +106,24 @@ exports.register = async (req, res) => {
       course,
       admissionNumber,
       isTutor: isTutorBool,
-      tutorProfile: isTutorBool ? {
-        subjects: tutorSubjects.map(s => ({
-          moduleCode: s.moduleCode,
-          name: s.name,
-          grade: s.grade,
-          sessions: 0
-        })),
-        rating: 0,
-        reviewCount: 0,
-        totalSessions: 0,
-        hoursTaught: 0,
-        responseRate: 0,
-        replyTime: '< 24 hours',
-        badges: [],
-        availability: []
-      } : undefined
+      tutorProfile: isTutorBool
+        ? {
+            subjects: tutorSubjects.map((s) => ({
+              moduleCode: s.moduleCode,
+              name: s.name,
+              grade: s.grade,
+              sessions: 0,
+            })),
+            rating: 0,
+            reviewCount: 0,
+            totalSessions: 0,
+            hoursTaught: 0,
+            responseRate: 0,
+            replyTime: "< 24 hours",
+            badges: [],
+            availability: [],
+          }
+        : undefined,
     });
 
     await user.save();
@@ -92,63 +131,11 @@ exports.register = async (req, res) => {
     const token = jwt.sign(
       { userId: user._id, email: user.email },
       process.env.JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: "7d" },
     );
 
     res.status(201).json({
-      message: 'User registered successfully',
-      token,
-      user: {
-        id: user._id,
-        userId: user.userId,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        year: user.year,
-        course: user.course,
-        admissionNumber: user.admissionNumber,
-        bio: user.bio,
-        profilePhoto: user.profilePhoto,
-        isTutor: user.isTutor
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
-
-exports.login = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    console.log('[Login] Attempting login for:', email);
-
-    const user = await User.findOne({ email });
-    if (!user) {
-      console.log('[Login] User not found:', email);
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
-
-    console.log('[Login] User found:', user.email, '| isAdmin:', user.isAdmin);
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      console.log('[Login] Password mismatch for:', email);
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
-
-    console.log('[Login] Password valid, generating token...');
-
-    const token = jwt.sign(
-      { userId: user._id, email: user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-
-    console.log('[Login] Success for:', email);
-
-    res.json({
-      message: 'Login successful',
+      message: "User registered successfully",
       token,
       user: {
         id: user._id,
@@ -162,47 +149,147 @@ exports.login = async (req, res) => {
         bio: user.bio,
         profilePhoto: user.profilePhoto,
         isTutor: user.isTutor,
-        isAdmin: user.isAdmin
-      }
+      },
     });
   } catch (error) {
-    console.error('[Login] Error:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+exports.login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    console.log("[Login] Attempting login for:", email);
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      console.log("[Login] User not found:", email);
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    console.log("[Login] User found:", user.email, "| isAdmin:", user.isAdmin);
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      console.log("[Login] Password mismatch for:", email);
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    console.log("[Login] Password valid, generating token...");
+
+    const token = jwt.sign(
+      { userId: user._id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" },
+    );
+
+    console.log("[Login] Success for:", email);
+
+    res.json({
+      message: "Login successful",
+      token,
+      user: {
+        id: user._id,
+        userId: user.userId,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        year: user.year,
+        course: user.course,
+        admissionNumber: user.admissionNumber,
+        bio: user.bio,
+        profilePhoto: user.profilePhoto,
+        isTutor: user.isTutor,
+        isAdmin: user.isAdmin,
+      },
+    });
+  } catch (error) {
+    console.error("[Login] Error:", error.message);
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
 exports.getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.userId).select('-password');
+    const user = await User.findById(req.user.userId).select("-password");
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
     res.json(user);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
 exports.updateProfile = async (req, res) => {
   try {
-    const updates = req.body;
-    delete updates.password;
+    const updates = { ...req.body };
+    // Prevent email update
     delete updates.email;
 
-    const user = await User.findByIdAndUpdate(
-      req.user.userId,
-      updates,
-      { new: true, runValidators: true }
-    ).select('-password');
+    // Handle password update
+    if (updates.newPassword || updates.currentPassword) {
+      if (!updates.newPassword || !updates.currentPassword) {
+        return res
+          .status(400)
+          .json({ message: "Please provide both current and new passwords" });
+      }
 
-    res.json({ message: 'Profile updated successfully', user });
+      const user = await User.findById(req.user.userId);
+      if (!user) {
+        console.log("[UpdateProfile] User not found for ID:", req.user.userId);
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      console.log(
+        "[UpdateProfile] User found. Hash length:",
+        user.password ? user.password.length : "NULL",
+      );
+
+      const isMatch = await bcrypt.compare(
+        updates.currentPassword,
+        user.password,
+      );
+
+      console.log("[UpdateProfile] Bcrypt comparison result:", isMatch);
+
+      if (!isMatch) {
+        console.log("[UpdateProfile] Password mismatch. Rejecting.");
+        return res.status(400).json({ message: "Incorrect current password" });
+      }
+
+      updates.password = await bcrypt.hash(updates.newPassword, 10);
+    }
+
+    // Remove password-related fields from updates object to prevent schema errors or leaks
+    delete updates.currentPassword;
+    delete updates.newPassword;
+    delete updates.confirmNewPassword;
+
+    // If we deliberately set password above, we don't want to delete it here if it was in the body (though it shouldn't be)
+    // But we should ensure we don't accidentally update password if it was passed in body without verification
+    // valid case: updates.password is now the ID of the hashed password
+
+    // Safety: if the user sent 'password' in body but NOT newPassword/currentPassword,
+    // we should usually ignore it.
+    if (!updates.newPassword && !updates.currentPassword && req.body.password) {
+      delete updates.password;
+    }
+
+    const user = await User.findByIdAndUpdate(req.user.userId, updates, {
+      new: true,
+      runValidators: true,
+    }).select("-password");
+
+    res.json({ message: "Profile updated successfully", user });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
-const crypto = require('crypto');
-const nodemailer = require('nodemailer');
+const crypto = require("crypto");
+const nodemailer = require("nodemailer");
 
 exports.forgotPassword = async (req, res) => {
   try {
@@ -210,11 +297,11 @@ exports.forgotPassword = async (req, res) => {
     const user = await User.findOne({ email });
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     // Generate token
-    const token = crypto.randomBytes(20).toString('hex');
+    const token = crypto.randomBytes(20).toString("hex");
 
     // Set token and expiry on user (1 hour)
     user.resetPasswordToken = token;
@@ -223,36 +310,39 @@ exports.forgotPassword = async (req, res) => {
 
     // Create transporter
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      service: "gmail",
       auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      }
+        pass: process.env.EMAIL_PASS,
+      },
     });
 
     const resetUrl = `http://localhost:5173/reset-password/${token}`;
 
     if (!process.env.EMAIL_USER) {
       console.log(`[DEV] Reset Password Link: ${resetUrl}`);
-      return res.json({ message: 'Reset link generated (check server console)', token });
+      return res.json({
+        message: "Reset link generated (check server console)",
+        token,
+      });
     }
 
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: user.email,
-      subject: 'Password Reset Request',
-      text: `You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n` +
+      subject: "Password Reset Request",
+      text:
+        `You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n` +
         `Please click on the following link, or paste this into your browser to complete the process:\n\n` +
         `${resetUrl}\n\n` +
-        `If you did not request this, please ignore this email and your password will remain unchanged.\n`
+        `If you did not request this, please ignore this email and your password will remain unchanged.\n`,
     };
 
     await transporter.sendMail(mailOptions);
-    res.json({ message: 'Email sent' });
-
+    res.json({ message: "Email sent" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
@@ -263,11 +353,13 @@ exports.resetPassword = async (req, res) => {
 
     const user = await User.findOne({
       resetPasswordToken: token,
-      resetPasswordExpires: { $gt: Date.now() }
+      resetPasswordExpires: { $gt: Date.now() },
     });
 
     if (!user) {
-      return res.status(400).json({ message: 'Password reset token is invalid or has expired' });
+      return res
+        .status(400)
+        .json({ message: "Password reset token is invalid or has expired" });
     }
 
     // Hash new password
@@ -278,10 +370,9 @@ exports.resetPassword = async (req, res) => {
 
     await user.save();
 
-    res.json({ message: 'Password has been updated' });
-
+    res.json({ message: "Password has been updated" });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
@@ -289,11 +380,10 @@ exports.deleteAccount = async (req, res) => {
   try {
     const user = await User.findByIdAndDelete(req.user.userId);
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
-    res.json({ message: 'Account deleted successfully' });
+    res.json({ message: "Account deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
-

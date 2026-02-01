@@ -27,6 +27,12 @@ const ProfileSettings = () => {
     { moduleCode: '', name: '', grade: '' }
   ]);
 
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmNewPassword: ''
+  });
+
   useEffect(() => {
     if (user) {
       setProfileData({
@@ -83,6 +89,13 @@ const ProfileSettings = () => {
     });
   };
 
+  const handlePasswordChange = (e) => {
+    setPasswordData({
+      ...passwordData,
+      [e.target.name]: e.target.value
+    });
+  };
+
   const handleSubjectChange = (index, field, value) => {
     const updatedSubjects = [...tutorSubjects];
     if (field === 'moduleCode') {
@@ -123,8 +136,27 @@ const ProfileSettings = () => {
     }
 
     try {
+      if (passwordData.newPassword || passwordData.currentPassword || passwordData.confirmNewPassword) {
+        if (!passwordData.currentPassword) {
+           setMessage({ type: 'error', text: 'Current password is required to set a new password.' });
+           setLoading(false);
+           return;
+        }
+        if (!passwordData.newPassword) {
+           setMessage({ type: 'error', text: 'New password is required.' });
+           setLoading(false);
+           return;
+        }
+        if (passwordData.newPassword !== passwordData.confirmNewPassword) {
+           setMessage({ type: 'error', text: 'New passwords do not match.' });
+           setLoading(false);
+           return;
+        }
+      }
+
       const updatePayload = {
         ...profileData,
+        ...passwordData,
         tutorProfile: {
           ...(user.tutorProfile || {}),
           subjects: profileData.isTutor ? tutorSubjects : []
@@ -134,9 +166,11 @@ const ProfileSettings = () => {
       const result = await updateProfile(updatePayload);
       if (result.success) {
         setMessage({ type: 'success', text: 'Profile updated successfully!' });
+        setPasswordData({ currentPassword: '', newPassword: '', confirmNewPassword: '' });
         window.scrollTo({ top: 0, behavior: 'smooth' });
         await loadUserProfile();
       } else {
+        console.error('Update failed:', result.message);
         setMessage({ type: 'error', text: result.message || 'Failed to update profile' });
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
@@ -195,16 +229,12 @@ const ProfileSettings = () => {
           </div>
 
           <div className="lg:col-span-3 space-y-8">
-            {message.text && (
-              <div className={`p-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
-                }`}>
-                {message.text}
-              </div>
-            )}
+            {/* Top message removed */}
 
-            <div id="profile-section" className="bg-white rounded-lg shadow p-6 scroll-mt-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Profile Settings</h2>
-              <form onSubmit={handleSaveProfile}>
+            <div id="settings-form-container">
+              <form id="settings-form" onSubmit={handleSaveProfile}>
+                <div id="profile-section" className="bg-white rounded-lg shadow p-6 scroll-mt-6">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Profile Settings</h2>
                 <div className="mb-6">
                   <div className="flex items-center gap-6 mb-6">
                     <div className="w-24 h-24 bg-gray-300 rounded-full overflow-hidden">
@@ -241,6 +271,7 @@ const ProfileSettings = () => {
                       )}
                     </div>
                   </div>
+                  
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -406,20 +437,9 @@ const ProfileSettings = () => {
                   )}
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? 'Saving...' : 'Save Changes'}
-                </button>
-                {message.text && (
-                  <p className={`mt-4 text-center ${message.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
-                    {message.text}
-                  </p>
-                )}
-              </form>
-            </div>
+
+                {/* Middle message removed */}
+                </div>
 
 
 
@@ -428,14 +448,16 @@ const ProfileSettings = () => {
 
               <div className="mb-8">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Change Password</h3>
-                <form>
-                  <div className="space-y-4 mb-6">
+                <div className="space-y-4 mb-6">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
                         Current Password
                       </label>
                       <input
                         type="password"
+                        name="currentPassword"
+                        value={passwordData.currentPassword}
+                        onChange={handlePasswordChange}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
@@ -445,6 +467,9 @@ const ProfileSettings = () => {
                       </label>
                       <input
                         type="password"
+                        name="newPassword"
+                        value={passwordData.newPassword}
+                        onChange={handlePasswordChange}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
@@ -454,17 +479,15 @@ const ProfileSettings = () => {
                       </label>
                       <input
                         type="password"
+                        name="confirmNewPassword"
+                        value={passwordData.confirmNewPassword}
+                        onChange={handlePasswordChange}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
                   </div>
-                  <button
-                    type="submit"
-                    className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
-                  >
-                    Update Password
-                  </button>
-                </form>
+
+
               </div>
 
               <div className="mb-8">
@@ -518,6 +541,26 @@ const ProfileSettings = () => {
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* Singular Save Button */}
+            <div className="sticky bottom-6 bg-white rounded-lg shadow p-4 flex justify-between items-center border-t border-gray-100 z-10">
+              <div className="text-sm text-gray-500">
+                {message.text && (
+                  <span className={`${message.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+                    {message.text}
+                  </span>
+                )}
+              </div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
             </div>
           </div>
         </div>

@@ -188,9 +188,12 @@ const MyBookings = () => {
               const currentUserId = user?._id || user?.id;
               // If I am the student, show the tutor. If I am the tutor, show the student.
               // Note: session.student and session.tutor are populated objects
-              const isMeStudent = session.student._id === currentUserId || session.student === currentUserId;
+              // Handle cases where student or tutor might be null (deleted users)
+              const studentId = session.student?._id || session.student;
+              const tutorId = session.tutor?._id || session.tutor;
+              const isMeStudent = studentId === currentUserId;
               const otherPerson = isMeStudent ? session.tutor : session.student;
-              const displayName = otherPerson?.name || 'Unknown';
+              const displayName = otherPerson?.name || 'Deleted User';
               const displayRole = isMeStudent ? 'Tutor' : 'Student';
 
               return (

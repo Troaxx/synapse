@@ -51,9 +51,14 @@ const SessionDetails = () => {
         );
     }
 
-    const isTutor = user?.isTutor;
-    const otherPerson = isTutor ? session.student : session.tutor;
-    const displayName = otherPerson?.name || 'Unknown';
+    // Determine if current user is the student in THIS session
+    const currentUserId = user?._id || user?.id;
+    const studentId = session.student?._id || session.student;
+    const isMeStudent = studentId === currentUserId;
+    
+    // Show the other person (tutor if I'm student, student if I'm tutor)
+    const otherPerson = isMeStudent ? session.tutor : session.student;
+    const displayName = otherPerson?.name || 'Deleted User';
 
     // Display label logic
     const displayStatus = session.status === 'Cancelled' ? 'Rejected' : session.status;
@@ -91,8 +96,8 @@ const SessionDetails = () => {
                         {/* Person Info */}
                         <UserProfileCard
                             user={otherPerson}
-                            role={isTutor ? 'Student' : 'Tutor'}
-                            isClickable={!isTutor}
+                            role={isMeStudent ? 'Tutor' : 'Student'}
+                            isClickable={isMeStudent}
                             targetUrl={`/tutor/${otherPerson?._id || otherPerson?.id}`}
                         />
 

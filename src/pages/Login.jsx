@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -11,8 +11,38 @@ const Login = () => {
   });
   const [error, setError] = useState('');
   const [isAdminLogin, setIsAdminLogin] = useState(false);
-
   const [loading, setLoading] = useState(false);
+  
+  // Suspension state
+  const [suspensionInfo, setSuspensionInfo] = useState(null);
+  const [timeRemaining, setTimeRemaining] = useState('');
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (!suspensionInfo?.suspensionExpires) return;
+
+    const updateTimer = () => {
+      const now = new Date();
+      const expires = new Date(suspensionInfo.suspensionExpires);
+      const diff = expires - now;
+
+      if (diff <= 0) {
+        setSuspensionInfo(null);
+        setTimeRemaining('');
+        return;
+      }
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      setTimeRemaining(`${hours}h ${minutes}m ${seconds}s`);
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [suspensionInfo]);
 
   const handleChange = (e) => {
     setFormData({
@@ -24,6 +54,7 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSuspensionInfo(null);
     setLoading(true);
 
     try {
@@ -31,6 +62,11 @@ const Login = () => {
 
       if (result.success) {
         navigate('/');
+      } else if (result.suspended) {
+        setSuspensionInfo({
+          suspensionExpires: result.suspensionExpires,
+          suspensionReason: result.suspensionReason
+        });
       } else {
         setError(result.message);
       }
@@ -59,6 +95,24 @@ const Login = () => {
           )}
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          {/* Suspension Alert */}
+          {suspensionInfo && (
+            <div className="rounded-md bg-red-100 border border-red-400 p-4">
+              <div className="flex items-center mb-2">
+                <svg className="w-5 h-5 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span className="font-bold text-red-800">Account Suspended</span>
+              </div>
+              <p className="text-sm text-red-700 mb-2">
+                <strong>Reason:</strong> {suspensionInfo.suspensionReason}
+              </p>
+              <p className="text-sm text-red-700">
+                <strong>Time remaining:</strong> <span className="font-mono font-bold">{timeRemaining}</span>
+              </p>
+            </div>
+          )}
+
           {error && (
             <div className="rounded-md bg-red-50 p-4">
               <div className="text-sm text-red-800">{error}</div>

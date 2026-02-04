@@ -130,7 +130,9 @@ const Dashboard = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Rating</p>
-              <h3 className="text-2xl font-bold text-gray-900">--</h3>
+              <h3 className="text-2xl font-bold text-gray-900">
+                {isTutor && user.tutorProfile?.rating ? user.tutorProfile.rating.toFixed(1) : '--'}
+              </h3>
             </div>
           </div>
         </div>
@@ -142,11 +144,18 @@ const Dashboard = () => {
             {!loading && subjectData.length > 0 && (
               <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
                 <h3 className="text-lg font-bold text-gray-900 mb-6">Learning Activity by Subject</h3>
-                <div className="h-64">
+                <div className="h-80">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={subjectData}>
+                    <BarChart data={subjectData} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="name" />
+                      <XAxis 
+                        dataKey="name" 
+                        angle={-45} 
+                        textAnchor="end" 
+                        interval={0}
+                        tick={{ fontSize: 12 }}
+                        height={80}
+                      />
                       <YAxis allowDecimals={false} />
                       <Tooltip
                         contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}

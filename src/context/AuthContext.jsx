@@ -40,9 +40,20 @@ export const AuthProvider = ({ children }) => {
 
       return { success: true };
     } catch (error) {
+      const responseData = error.response?.data;
+      // Check if user is suspended
+      if (responseData?.suspended) {
+        return {
+          success: false,
+          suspended: true,
+          suspensionExpires: responseData.suspensionExpires,
+          suspensionReason: responseData.suspensionReason,
+          message: responseData.message
+        };
+      }
       return {
         success: false,
-        message: error.response?.data?.message || 'Login failed'
+        message: responseData?.message || 'Login failed'
       };
     }
   };

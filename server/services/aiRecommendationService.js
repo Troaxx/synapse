@@ -1,6 +1,6 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-const Session = require('../models/Session');
-const User = require('../models/User');
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const Session = require("../models/Session");
+const User = require("../models/User");
 
 class AIRecommendationService {
   constructor() {
@@ -13,13 +13,17 @@ class AIRecommendationService {
     if (process.env.GEMINI_API_KEY) {
       try {
         this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        this.model = this.genAI.getGenerativeModel({
+          model: "gemini-2.5-flash",
+        });
       } catch (error) {
-        console.warn('Error initializing Gemini AI:', error.message);
+        console.warn("Error initializing Gemini AI:", error.message);
         this.model = null;
       }
     } else {
-      console.warn('Gemini API key not found. AI recommendations will be disabled.');
+      console.warn(
+        "Gemini API key not found. AI recommendations will be disabled.",
+      );
     }
   }
 
@@ -27,34 +31,46 @@ class AIRecommendationService {
     try {
       const user = await User.findById(userId);
       if (!user) {
-        throw new Error('User not found');
+        throw new Error("User not found");
       }
 
       const recentSessions = await Session.find({
         student: userId,
-        status: 'Completed'
+        status: "Completed",
       })
-        .populate('tutor', 'name tutorProfile')
+        .populate("tutor", "name tutorProfile")
         .sort({ date: -1 })
         .limit(10);
 
-      const userPreferences = await this.analyzeUserPreferences(user, recentSessions);
+      const userPreferences = await this.analyzeUserPreferences(
+        user,
+        recentSessions,
+      );
 
       let availableTutors = await User.find({
         isTutor: true,
-        _id: { $ne: userId }
-      }).select('-password');
+        _id: { $ne: userId },
+      }).select("-password");
 
-      console.log(`Debug AI: UserID: ${userId}, Available Tutors Count: ${availableTutors.length}`);
-      console.log('Debug AI: Available Tutor IDs:', availableTutors.map(t => t._id.toString()));
+      console.log(
+        `Debug AI: UserID: ${userId}, Available Tutors Count: ${availableTutors.length}`,
+      );
+      console.log(
+        "Debug AI: Available Tutor IDs:",
+        availableTutors.map((t) => t._id.toString()),
+      );
 
-      const isSelfInList = availableTutors.some(t => t._id.toString() === userId.toString());
+      const isSelfInList = availableTutors.some(
+        (t) => t._id.toString() === userId.toString(),
+      );
       if (isSelfInList) {
-        console.error('CRITICAL: User is still in available tutors list!');
+        console.error("CRITICAL: User is still in available tutors list!");
       }
 
       // Paranoid check to ensure current user is definitely not in the list
-      availableTutors = availableTutors.filter(t => t._id.toString() !== userId.toString());
+      availableTutors = availableTutors.filter(
+        (t) => t._id.toString() !== userId.toString(),
+      );
 
       if (!this.model) {
         return this.fallbackRecommendation(userPreferences, availableTutors);
@@ -64,12 +80,12 @@ class AIRecommendationService {
         user,
         userPreferences,
         availableTutors,
-        recentSessions
+        recentSessions,
       );
 
       return aiRecommendations;
     } catch (error) {
-      console.error('Error getting AI recommendations:', error);
+      console.error("Error getting AI recommendations:", error);
       throw error;
     }
   }
@@ -80,11 +96,13 @@ class AIRecommendationService {
     const preferredLocations = {};
     const preferredTimes = {};
 
-    recentSessions.forEach(session => {
-      subjectFrequency[session.subject] = (subjectFrequency[session.subject] || 0) + 1;
+    recentSessions.forEach((session) => {
+      subjectFrequency[session.subject] =
+        (subjectFrequency[session.subject] || 0) + 1;
 
       if (session.location) {
-        preferredLocations[session.location] = (preferredLocations[session.location] || 0) + 1;
+        preferredLocations[session.location] =
+          (preferredLocations[session.location] || 0) + 1;
       }
 
       if (session.time) {
@@ -92,12 +110,14 @@ class AIRecommendationService {
         preferredTimes[timeSlot] = (preferredTimes[timeSlot] || 0) + 1;
       }
 
-      if (session.review && session.review.rating) {
-        const tutorId = session.tutor._id.toString();
+      if (session.review && session.review.rating && session.tutor) {
+        const tutorId = session.tutor._id
+          ? session.tutor._id.toString()
+          : session.tutor.toString();
         if (!tutorRatings[tutorId]) {
           tutorRatings[tutorId] = {
             ratings: [],
-            tutorName: session.tutor.name
+            tutorName: session.tutor.name || "Unknown",
           };
         }
         tutorRatings[tutorId].ratings.push(session.review.rating);
@@ -109,11 +129,13 @@ class AIRecommendationService {
       .slice(0, 3)
       .map(([subject]) => subject);
 
-    const preferredLocation = Object.entries(preferredLocations)
-      .sort((a, b) => b[1] - a[1])[0]?.[0] || 'Any';
+    const preferredLocation =
+      Object.entries(preferredLocations).sort((a, b) => b[1] - a[1])[0]?.[0] ||
+      "Any";
 
-    const preferredTimeSlot = Object.entries(preferredTimes)
-      .sort((a, b) => b[1] - a[1])[0]?.[0] || 'Any';
+    const preferredTimeSlot =
+      Object.entries(preferredTimes).sort((a, b) => b[1] - a[1])[0]?.[0] ||
+      "Any";
 
     return {
       mostFrequentSubjects,
@@ -121,40 +143,53 @@ class AIRecommendationService {
       preferredTimeSlot,
       tutorRatings,
       subjectsNeedHelp: user.subjectsNeedHelp || [],
-      totalSessions: recentSessions.length
+      totalSessions: recentSessions.length,
     };
   }
 
   categorizeTimeSlot(time) {
-    const hour = parseInt(time.split(':')[0]);
-    const isPM = time.includes('PM');
+    const hour = parseInt(time.split(":")[0]);
+    const isPM = time.includes("PM");
     const hour24 = isPM && hour !== 12 ? hour + 12 : hour;
 
-    if (hour24 >= 6 && hour24 < 12) return 'Morning';
-    if (hour24 >= 12 && hour24 < 17) return 'Afternoon';
-    if (hour24 >= 17 && hour24 < 21) return 'Evening';
-    return 'Night';
+    if (hour24 >= 6 && hour24 < 12) return "Morning";
+    if (hour24 >= 12 && hour24 < 17) return "Afternoon";
+    if (hour24 >= 17 && hour24 < 21) return "Evening";
+    return "Night";
   }
 
-  async getAIRecommendations(user, preferences, availableTutors, recentSessions) {
-    const prompt = this.buildPrompt(user, preferences, availableTutors, recentSessions);
+  async getAIRecommendations(
+    user,
+    preferences,
+    availableTutors,
+    recentSessions,
+  ) {
+    const prompt = this.buildPrompt(
+      user,
+      preferences,
+      availableTutors,
+      recentSessions,
+    );
 
     try {
       // Create a timeout promise
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('AI Generation Timeout')), 30000)
+        setTimeout(() => reject(new Error("AI Generation Timeout")), 30000),
       );
 
       // Race the generation against the timeout
       const result = await Promise.race([
         this.model.generateContent(prompt),
-        timeoutPromise
+        timeoutPromise,
       ]);
 
       const response = await result.response;
       const text = response.text();
 
-      console.log('✅ AI Service successfully generated recommendations using model:', this.model.model);
+      console.log(
+        "✅ AI Service successfully generated recommendations using model:",
+        this.model.model,
+      );
 
       const recommendations = this.parseAIResponse(text, availableTutors);
 
@@ -164,31 +199,33 @@ class AIRecommendationService {
         preferences: {
           subjects: preferences.mostFrequentSubjects,
           location: preferences.preferredLocation,
-          timeSlot: preferences.preferredTimeSlot
-        }
+          timeSlot: preferences.preferredTimeSlot,
+        },
       };
     } catch (error) {
-      if (error.message === 'AI Generation Timeout') {
-        console.warn('⚠️ Gemini API timed out, switching to fallback recommendations');
+      if (error.message === "AI Generation Timeout") {
+        console.warn(
+          "⚠️ Gemini API timed out, switching to fallback recommendations",
+        );
       } else {
-        console.error('Error calling Gemini API:', error);
+        console.error("Error calling Gemini API:", error);
       }
       return this.fallbackRecommendation(preferences, availableTutors);
     }
   }
 
   buildPrompt(user, preferences, tutors, recentSessions) {
-    const tutorsList = tutors.map(t => ({
+    const tutorsList = tutors.map((t) => ({
       name: t.name,
-      subjects: t.tutorProfile?.subjects?.map(s => s.name) || [],
+      subjects: t.tutorProfile?.subjects?.map((s) => s.name) || [],
       rating: t.tutorProfile?.rating || 0,
       totalSessions: t.tutorProfile?.totalSessions || 0,
       badges: t.tutorProfile?.badges || [],
-      availability: t.tutorProfile?.availability?.length || 0
+      availability: t.tutorProfile?.availability?.length || 0,
     }));
 
-    const recentSubjects = recentSessions.map(s => s.subject).join(', ');
-    const recentTopics = recentSessions.map(s => s.topic).join(', ');
+    const recentSubjects = recentSessions.map((s) => s.subject).join(", ");
+    const recentTopics = recentSessions.map((s) => s.topic).join(", ");
 
     return `You are an AI tutor recommendation system for a peer tutoring platform at Temasek Polytechnic.
 
@@ -196,13 +233,13 @@ User Profile:
 - Name: ${user.name}
 - Year: ${user.year}
 - Course: ${user.course}
-- Subjects they need help with: ${preferences.subjectsNeedHelp.join(', ') || 'Not specified'}
+- Subjects they need help with: ${preferences.subjectsNeedHelp.join(", ") || "Not specified"}
 
 User's Learning History:
 - Total completed sessions: ${preferences.totalSessions}
-- Most frequently studied subjects: ${preferences.mostFrequentSubjects.join(', ') || 'None yet'}
-- Recent subjects: ${recentSubjects || 'None'}
-- Recent topics: ${recentTopics || 'None'}
+- Most frequently studied subjects: ${preferences.mostFrequentSubjects.join(", ") || "None yet"}
+- Recent subjects: ${recentSubjects || "None"}
+- Recent topics: ${recentTopics || "None"}
 - Preferred location: ${preferences.preferredLocation}
 - Preferred time slot: ${preferences.preferredTimeSlot}
 
@@ -230,27 +267,31 @@ Use the '|' character to separate distinct points. Keep each point concise (unde
 
     const tutorLine = text.match(/RECOMMENDED_TUTORS:\s*(.+)/i);
     if (tutorLine) {
-      const names = tutorLine[1].split(',').map(name =>
-        name.trim().replace(/[\[\]]/g, '')
-      );
+      const names = tutorLine[1]
+        .split(",")
+        .map((name) => name.trim().replace(/[\[\]]/g, ""));
       recommendedNames.push(...names);
     }
 
     const recommendations = [];
     for (const name of recommendedNames) {
-      const tutor = availableTutors.find(t =>
-      (t.name.toLowerCase().includes(name.toLowerCase()) ||
-        name.toLowerCase().includes(t.name.toLowerCase()))
+      const tutor = availableTutors.find(
+        (t) =>
+          t.name.toLowerCase().includes(name.toLowerCase()) ||
+          name.toLowerCase().includes(t.name.toLowerCase()),
       );
-      if (tutor && !recommendations.find(r => r._id.equals(tutor._id))) {
+      if (tutor && !recommendations.find((r) => r._id.equals(tutor._id))) {
         recommendations.push(tutor);
       }
     }
 
     if (recommendations.length < 3) {
       const remaining = availableTutors
-        .filter(t => !recommendations.find(r => r._id.equals(t._id)))
-        .sort((a, b) => (b.tutorProfile?.rating || 0) - (a.tutorProfile?.rating || 0))
+        .filter((t) => !recommendations.find((r) => r._id.equals(t._id)))
+        .sort(
+          (a, b) =>
+            (b.tutorProfile?.rating || 0) - (a.tutorProfile?.rating || 0),
+        )
         .slice(0, 3 - recommendations.length);
       recommendations.push(...remaining);
     }
@@ -259,31 +300,45 @@ Use the '|' character to separate distinct points. Keep each point concise (unde
   }
 
   fallbackRecommendation(preferences, availableTutors) {
-    console.log('⚠️ Using Fallback Recommendation System');
-    const subjectMatch = availableTutors.filter(tutor => {
-      const tutorSubjects = tutor.tutorProfile?.subjects?.map(s => s.name.toLowerCase()) || [];
-      return preferences.mostFrequentSubjects.some(subject =>
-        tutorSubjects.some(ts => ts.includes(subject.toLowerCase()) || subject.toLowerCase().includes(ts))
+    console.log("⚠️ Using Fallback Recommendation System");
+    const subjectMatch = availableTutors.filter((tutor) => {
+      const tutorSubjects =
+        tutor.tutorProfile?.subjects?.map((s) => s.name.toLowerCase()) || [];
+      return preferences.mostFrequentSubjects.some((subject) =>
+        tutorSubjects.some(
+          (ts) =>
+            ts.includes(subject.toLowerCase()) ||
+            subject.toLowerCase().includes(ts),
+        ),
       ); // Check if tutor teaches user's frequent subjects
     });
 
-    const sortedTutors = [...subjectMatch, ...availableTutors.filter(t => !subjectMatch.includes(t))]
-      .sort((a, b) => {
-        const ratingA = a.tutorProfile?.rating || 0;
-        const ratingB = b.tutorProfile?.rating || 0;
-        return ratingB - ratingA;
-      }); // Sort by rating high to low (in general, not specified reviews/ratings)
+    const sortedTutors = [
+      ...subjectMatch,
+      ...availableTutors.filter((t) => !subjectMatch.includes(t)),
+    ].sort((a, b) => {
+      const ratingA = a.tutorProfile?.rating || 0;
+      const ratingB = b.tutorProfile?.rating || 0;
+      return ratingB - ratingA;
+    }); // Sort by rating high to low (in general, not specified reviews/ratings)
 
     return {
       recommendations: sortedTutors.slice(0, 3),
-      reasoning: `Based on your recent sessions in ${preferences.mostFrequentSubjects.join(', ')}:\n\n` +
-        sortedTutors.slice(0, 3).map(t => `- **${t.name}**: Highly rated (${t.tutorProfile?.rating || 0}★) | Expertise matches your subjects | proven track record`).join('\n') +
+      reasoning:
+        `Based on your recent sessions in ${preferences.mostFrequentSubjects.join(", ")}:\n\n` +
+        sortedTutors
+          .slice(0, 3)
+          .map(
+            (t) =>
+              `- **${t.name}**: Highly rated (${t.tutorProfile?.rating || 0}★) | Expertise matches your subjects | proven track record`,
+          )
+          .join("\n") +
         `\n\n(Note: These are rule-based recommendations pending AI service availability)`,
       preferences: {
         subjects: preferences.mostFrequentSubjects,
         location: preferences.preferredLocation,
-        timeSlot: preferences.preferredTimeSlot
-      }
+        timeSlot: preferences.preferredTimeSlot,
+      },
     };
   }
 
@@ -291,7 +346,7 @@ Use the '|' character to separate distinct points. Keep each point concise (unde
     try {
       const recentSessions = await Session.find({
         student: userId,
-        status: 'Completed'
+        status: "Completed",
       })
         .sort({ date: -1 })
         .limit(10);
@@ -302,13 +357,13 @@ Use the '|' character to separate distinct points. Keep each point concise (unde
         return this.fallbackSubjectRecommendation(recentSessions, user);
       }
 
-      const subjects = recentSessions.map(s => s.subject);
-      const topics = recentSessions.map(s => s.topic);
+      const subjects = recentSessions.map((s) => s.subject);
+      const topics = recentSessions.map((s) => s.topic);
 
       const prompt = `Based on a student's recent tutoring sessions, suggest 3-5 related subjects or topics they should consider learning next.
 
-Recent subjects studied: ${subjects.join(', ')}
-Recent topics: ${topics.join(', ')}
+Recent subjects studied: ${subjects.join(", ")}
+Recent topics: ${topics.join(", ")}
 Student's year: ${user.year}
 Student's course: ${user.course}
 
@@ -324,28 +379,32 @@ Format: List 3-5 subjects/topics, one per line, with a brief reason (one sentenc
       const text = response.text();
 
       return {
-        suggestions: text.split('\n').filter(line => line.trim()),
-        reasoning: 'AI-generated suggestions based on your learning journey'
+        suggestions: text.split("\n").filter((line) => line.trim()),
+        reasoning: "AI-generated suggestions based on your learning journey",
       };
     } catch (error) {
-      console.error('Error getting subject recommendations:', error);
+      console.error("Error getting subject recommendations:", error);
       return this.fallbackSubjectRecommendation(recentSessions, user);
     }
   }
 
   fallbackSubjectRecommendation(recentSessions, user) {
     const commonProgression = {
-      'Python': ['Data Structures', 'Web Development', 'Machine Learning'],
-      'Java': ['Object-Oriented Programming', 'Data Structures', 'Android Development'],
-      'Web Development': ['JavaScript', 'React', 'Full Stack Development'],
-      'Database': ['SQL', 'NoSQL', 'Database Design'],
-      'Mathematics': ['Statistics', 'Calculus', 'Linear Algebra']
+      Python: ["Data Structures", "Web Development", "Machine Learning"],
+      Java: [
+        "Object-Oriented Programming",
+        "Data Structures",
+        "Android Development",
+      ],
+      "Web Development": ["JavaScript", "React", "Full Stack Development"],
+      Database: ["SQL", "NoSQL", "Database Design"],
+      Mathematics: ["Statistics", "Calculus", "Linear Algebra"],
     };
 
-    const recentSubjects = [...new Set(recentSessions.map(s => s.subject))];
+    const recentSubjects = [...new Set(recentSessions.map((s) => s.subject))];
     const suggestions = [];
 
-    recentSubjects.forEach(subject => {
+    recentSubjects.forEach((subject) => {
       if (commonProgression[subject]) {
         suggestions.push(...commonProgression[subject]);
       }
@@ -353,10 +412,9 @@ Format: List 3-5 subjects/topics, one per line, with a brief reason (one sentenc
 
     return {
       suggestions: [...new Set(suggestions)].slice(0, 5),
-      reasoning: 'Suggested based on common learning progressions'
+      reasoning: "Suggested based on common learning progressions",
     };
   }
 }
 
 module.exports = new AIRecommendationService();
-

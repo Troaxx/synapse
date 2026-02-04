@@ -168,6 +168,30 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
+    // Debug: Log suspension status
+    console.log("[Login] Suspension check:", {
+      email: user.email,
+      suspensionExpires: user.suspensionExpires,
+      suspensionReason: user.suspensionReason,
+      now: new Date(),
+      isSuspended:
+        user.suspensionExpires && new Date(user.suspensionExpires) > new Date(),
+    });
+
+    // Check if user is suspended
+    if (
+      user.suspensionExpires &&
+      new Date(user.suspensionExpires) > new Date()
+    ) {
+      console.log("[Login] User is suspended:", email);
+      return res.status(403).json({
+        message: "Account suspended",
+        suspended: true,
+        suspensionExpires: user.suspensionExpires,
+        suspensionReason: user.suspensionReason || "Violation of terms",
+      });
+    }
+
     console.log("[Login] User found:", user.email, "| isAdmin:", user.isAdmin);
 
     const isPasswordValid = await bcrypt.compare(password, user.password);

@@ -14,5 +14,6 @@ router.put("/reports/:reportId/resolve", adminController.resolveReport);
 
 router.get("/users", adminController.getAllUsers);
 router.put("/users/:userId", adminController.updateUserProfile);
+router.post("/users/:userId/suspend", adminController.suspendUser);
 
 module.exports = router;

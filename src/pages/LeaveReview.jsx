@@ -63,7 +63,7 @@ const LeaveReview = () => {
                     <div className="mb-8 p-4 bg-gray-50 rounded-lg border border-gray-100">
                         <h3 className="font-semibold text-gray-900 mb-1">{session.subject}</h3>
                         {session.topic && <p className="text-sm text-gray-600 mb-1">Topic: {session.topic}</p>}
-                        <p className="text-xs text-gray-500">{new Date(session.date).toLocaleDateString()} • {session.duration} min</p>
+                        <p className="text-xs text-gray-500">{session.duration} min</p>
                     </div>
 
                     <form onSubmit={handleSubmit}>

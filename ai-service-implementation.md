@@ -1,4 +1,5 @@
 # Additional Feature: AI Recommendations
+
 This web application implements AI recommendations service to provide personalized suggestions to users based on their past activity or preferences, enhancing the relevance of the web application.
 
 The AI Recommendation feature provides personalised suggestions of "recommended" tutors based on past user activities. For example, if a tutor has mostly positive reviews, the AI Recommendation feature will suggest that tutor to other users who have similar interests or preferences.
@@ -6,6 +7,7 @@ The AI Recommendation feature provides personalised suggestions of "recommended"
 In turn, this feature improves user experience by providing a more seamless and 'easy' way for users to look for tutors who really match what they might be looking for if they can't find a suitable one on the web application.
 
 # Implementation
+
 The following prompt is used for the service (can be found in `server/services/aiRecommendationService.js`):
 
 ```
@@ -45,22 +47,24 @@ Use the '|' character to separate distinct points. Keep each point concise (unde
 ```
 
 # Other Notes
+
 If an API key is not provided, the AI recommendation service will use a 'fallback' version, which is manually calculated based on the following criteria:
 
 1. Subject Relevance (Primary Priority)
-The system first prioritizes tutors who match the user's learning history:
+   The system first prioritizes tutors who match the user's learning history:
 
 It looks at the user's mostFrequentSubjects (derived from their completed sessions).
 It filters the list of available tutors to find those whose `tutorProfile.subjects` contain a match (using case-insensitive partial string matching). Tutors who teach these relevant subjects are placed at the top of the matched list.
 
 2. Tutor Rating (Secondary Priority)
-After prioritizing by subject match, the system sorts the tutors based on quality:
+   After prioritizing by subject match, the system sorts the tutors based on quality:
 
 Both the "Subject Matched" group and the "Remaining Tutors" group are internally sorted by their rating (tutorProfile.rating) in descending order.
 This ensures that among tutors who teach the same subject, the highest-rated ones are recommended first.
 
 Code Snippet of the fallback recommendation code (found in `server/services/aiRecommendationService.js`):
-```  
+
+```
   fallbackRecommendation(preferences, availableTutors) {
     console.log('⚠️ Using Fallback Recommendation System');
     const subjectMatch = availableTutors.filter(tutor => {
@@ -89,4 +93,4 @@ Code Snippet of the fallback recommendation code (found in `server/services/aiRe
       }
     };
   }
-  ```
+```

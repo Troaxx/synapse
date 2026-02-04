@@ -119,7 +119,7 @@ const FindTutors = () => {
                 </div>
               </div>
 
-              <div className="mb-6">
+              {/* <div className="mb-6">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Availability</label>
                 <div className="space-y-2">
                   <label className="flex items-center">
@@ -153,7 +153,7 @@ const FindTutors = () => {
                     <span className="text-sm text-gray-700">Library</span>
                   </label>
                 </div>
-              </div>
+              </div> */}
 
               <button
                 onClick={handleClearFilters}
